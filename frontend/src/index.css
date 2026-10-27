@@ -1,0 +1,33 @@
+/* ===== Global styles for LawAssist AI ===== */
+
+/* CSS variables: define a color once, reuse it everywhere with var(--name) */
+:root {
+  --navy: #1a1e28;
+  --navy-dark: #12151d;
+  --gold: #c9a45c;
+  --gold-light: #e6cf9b;
+  --cream: #f3ecdd;
+  --text-muted: #b4bdd0;
+  --dark-text: #0b1226;
+
+  font-family: 'Inter', system-ui, 'Noto Sans Bengali', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* Make width/height include padding and border (easier to reason about) */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--navy-dark);
+  color: var(--cream);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}

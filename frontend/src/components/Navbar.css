@@ -1,0 +1,225 @@
+/* ===== Navbar styles ===== */
+
+.navbar {
+  position: sticky; /* stays at the top while you scroll */
+  top: 0;
+  z-index: 100;
+  background-color: var(--navy);
+  border-bottom: 1px solid rgba(201, 164, 92, 0.22); /* subtle gold line */
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  max-width: 1440px;
+  height: 75px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ----- Brand ----- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+}
+
+.brand-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--cream);
+}
+
+.brand-ai {
+  color: var(--gold);
+}
+
+/* ----- Menu container (links on the left, buttons on the right) ----- */
+
+.navbar-menu {
+  display: flex;
+  flex: 1; /* take all remaining space */
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 40px;
+}
+
+/* ----- Navigation links ----- */
+
+.navbar-links {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: 26px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--cream);
+}
+
+/* NavLink adds the class "active" to the link for the current page */
+.nav-link.active {
+  color: var(--gold-light);
+}
+
+/* ----- Right side: language toggle, login, get started ----- */
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.language-toggle {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+  border-radius: 999px;
+}
+
+.lang-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.lang-button:hover {
+  color: var(--cream);
+}
+
+.lang-button.active {
+  background-color: var(--gold);
+  color: var(--dark-text);
+  font-weight: 600;
+}
+
+.login-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--cream);
+  transition: color 0.2s;
+}
+
+.login-link:hover {
+  color: var(--gold-light);
+}
+
+.get-started-button {
+  padding: 13px 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e6cf9b, #c9a45c);
+  box-shadow: 0 4px 18px rgba(201, 164, 92, 0.25);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--dark-text);
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.get-started-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(201, 164, 92, 0.4);
+}
+
+/* ----- Hamburger button: hidden on desktop ----- */
+
+.menu-button {
+  display: none;
+  margin-left: auto; /* pushes it to the far right */
+  padding: 6px 12px;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+  border-radius: 8px;
+  background: none;
+  font-size: 1.2rem;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+/* ===== Mobile / tablet layout (screens 1024px wide or smaller) ===== */
+
+@media (max-width: 1024px) {
+  .navbar-inner {
+    padding: 0 20px;
+  }
+
+  .menu-button {
+    display: block;
+  }
+
+  /* The menu becomes a panel under the navbar, hidden until "open" */
+  .navbar-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    margin-left: 0;
+    padding: 12px 20px 24px;
+    background-color: var(--navy);
+    border-bottom: 1px solid rgba(201, 164, 92, 0.22);
+  }
+
+  .navbar-menu.open {
+    display: flex;
+  }
+
+  .navbar-links {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 12px 4px;
+    font-size: 1rem;
+  }
+
+  .navbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .language-toggle {
+    justify-content: center;
+  }
+
+  .login-link {
+    padding: 4px;
+    text-align: center;
+  }
+}
