@@ -7,7 +7,6 @@ import FindLawyer from './pages/FindLawyer'
 import About from './pages/About'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import './App.css'
 
 function App() {
   return (
@@ -29,9 +28,9 @@ function App() {
         <Route
           path="*"
           element={
-            <main className="page">
-              <h1>Page not found</h1>
-              <p>Sorry, this page does not exist.</p>
+            <main className="mx-auto max-w-3xl px-6 py-20 text-center">
+              <h1 className="mb-4 font-serif text-4xl font-medium text-cream">Page not found</h1>
+              <p className="mb-3 text-lg text-muted">Sorry, this page does not exist.</p>
             </main>
           }
         />

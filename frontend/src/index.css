@@ -1,33 +1,21 @@
-/* ===== Global styles for LawAssist AI ===== */
+/* Load Tailwind CSS (Tailwind v4 needs just this one line) */
+@import "tailwindcss";
 
-/* CSS variables: define a color once, reuse it everywhere with var(--name) */
-:root {
-  --navy: #1a1e28;
-  --navy-dark: #12151d;
-  --gold: #c9a45c;
-  --gold-light: #e6cf9b;
-  --cream: #f3ecdd;
-  --text-muted: #b4bdd0;
-  --dark-text: #0b1226;
+/*
+  Our own design tokens (colors and fonts).
+  Tailwind turns each one into utility classes automatically:
+    --color-gold  ->  bg-gold, text-gold, border-gold ...
+    --font-serif  ->  font-serif
+*/
+@theme {
+  --color-navy: #1a1e28;
+  --color-navy-dark: #12151d;
+  --color-gold: #c9a45c;
+  --color-gold-light: #e6cf9b;
+  --color-cream: #f3ecdd;
+  --color-muted: #b4bdd0;
+  --color-ink: #0b1226; /* very dark blue, used for text on gold buttons */
 
-  font-family: 'Inter', system-ui, 'Noto Sans Bengali', Arial, sans-serif;
-  line-height: 1.5;
-}
-
-/* Make width/height include padding and border (easier to reason about) */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--navy-dark);
-  color: var(--cream);
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
+  --font-sans: "Inter", system-ui, "Noto Sans Bengali", Arial, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
 }

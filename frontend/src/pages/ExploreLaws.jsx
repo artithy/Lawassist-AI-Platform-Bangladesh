@@ -1,9 +1,9 @@
 function ExploreLaws() {
   return (
-    <main className="page">
-      <h1>Explore Laws</h1>
-      <p>Here you will be able to browse and search the laws of Bangladesh. Coming soon.</p>
-      <p className="page-route">Route: /laws</p>
+    <main className="mx-auto max-w-3xl px-6 py-20 text-center">
+      <h1 className="mb-4 font-serif text-4xl font-medium text-cream">Explore Laws</h1>
+      <p className="mb-3 text-lg text-muted">Here you will be able to browse and search the laws of Bangladesh. Coming soon.</p>
+      <p className="text-[0.95rem] text-gold">Route: /laws</p>
     </main>
   )
 }
