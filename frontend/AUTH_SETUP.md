@@ -43,12 +43,54 @@ Restart the dev server after changing `.env`.
 
 Supabase's built-in e-mail sender is rate-limited and only meant for testing. Set up your own SMTP provider before launch.
 
-## 4. Google sign-in (not working until you do this)
+## 4. Google sign-in
 
-1. Google Cloud Console → *APIs & Services → Credentials → Create credentials → OAuth client ID* (type **Web application**).
-2. Under *Authorized redirect URIs* add Supabase's callback: `https://<your-project-ref>.supabase.co/auth/v1/callback`.
-3. Supabase → Authentication → Providers → **Google**: switch it on and paste the Client ID and Client secret.
-4. Make sure the Redirect URLs from step 2 are saved in Supabase.
+If *Continue with Google* shows "Google sign-in is not switched on for this site yet" (or, before that message existed, a page with
+`{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`), the **Google provider is still
+switched off in your Supabase project**. The site's code is fine; two things must be set up outside the code:
+
+### 4a. Google Cloud (creates the Client ID and Client secret)
+
+1. Open <https://console.cloud.google.com> and sign in. Top bar -> project picker -> **New project** -> name it `LawAssist AI` -> **Create**, then select it.
+2. Menu -> **APIs & Services -> OAuth consent screen** (newer console: **Google Auth Platform**) -> **Get started**:
+   - App name `LawAssist AI`, your e-mail as support e-mail.
+   - Audience / user type: **External**.
+   - Contact e-mail: yours. Agree and **Create**.
+   - While the app is in **Testing**, only the Google accounts listed under **Audience -> Test users** can sign in: add your own Gmail (and any tester).
+   - The default permissions (`openid`, `email`, `profile`) are all this site needs. No extra scopes.
+3. Menu -> **APIs & Services -> Credentials -> Create credentials -> OAuth client ID**:
+   - Application type: **Web application**, name `LawAssist AI web`.
+   - **Authorized JavaScript origins** (optional for this flow): `http://localhost:5173`
+   - **Authorized redirect URIs** -> **Add URI**: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+     (this is SUPABASE'S address, not localhost. Supabase shows it to you on its Google provider page, so you can copy it from there.)
+   - **Create**. Copy the **Client ID** and **Client secret** (keep the secret private: never put it in `.env`, the code or git).
+4. Changes at Google can take a few minutes (rarely up to an hour) to apply.
+
+### 4b. Supabase dashboard
+
+1. **Authentication -> Sign In / Providers** (older dashboards: *Authentication -> Providers*) -> **Google**.
+2. Switch **Enable Sign in with Google** ON, paste the **Client ID** and **Client secret** from step 4a, leave "Skip nonce check" off, **Save**.
+3. **Authentication -> URL Configuration** (see section 2): Site URL `http://localhost:5173`, and Redirect URLs including `http://localhost:5173/assistant`.
+
+### 4c. What the two Supabase URL settings mean
+
+- **Site URL** is the default address Supabase sends people back to. It is also the fallback when the address the site asks for is
+  not on the allow-list. Use `http://localhost:5173` while developing and your real domain in production.
+- **Redirect URLs** is the allow-list of addresses Supabase may send people back to after sign-in. The site asks for
+  `<current site address>/assistant`, so that exact address (including the port) must be listed.
+  If it is missing, sign-in "works" but you land on the Site URL instead of `/assistant`.
+  Open the site as `http://localhost:5173` and not `http://127.0.0.1:5173`: they count as different addresses (list both if you use both).
+  When you deploy, add `https://your-domain/assistant` and `https://your-domain/login` and set the Site URL to `https://your-domain`.
+
+### 4d. Common Google sign-in errors
+
+| What you see | Cause | Fix |
+| --- | --- | --- |
+| "Google sign-in is not switched on..." / `Unsupported provider: provider is not enabled` | Google provider is OFF in Supabase | 4b step 2 |
+| Google page: `Error 400: redirect_uri_mismatch` | The redirect URI in Google Cloud is not exactly Supabase's callback | 4a step 3: use `https://<ref>.supabase.co/auth/v1/callback` |
+| Google page: `Error 403: access_denied` / "app not verified" | App is in Testing and your account is not a test user | Add the Gmail under Audience -> Test users (or publish the app) |
+| Back on the wrong page (not `/assistant`) | Address not in Supabase Redirect URLs | 4b step 3 |
+| `invalid_client` / "Unable to exchange external code" | Wrong Client ID or secret pasted into Supabase | Paste them again from Google Cloud |
 
 ## 5. Testing checklist
 
