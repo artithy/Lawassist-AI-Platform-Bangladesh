@@ -2,20 +2,39 @@
 @import "tailwindcss";
 
 /*
-  Our own design tokens (colors and fonts).
+  Our own design tokens (colors and fonts) - the "charcoal + silver + gold" theme.
   Tailwind turns each one into utility classes automatically:
     --color-gold  ->  bg-gold, text-gold, border-gold ...
     --font-serif  ->  font-serif
 */
 @theme {
-  --color-navy: #1a1e28;
-  --color-navy-dark: #12151d;
-  --color-gold: #c9a45c;
-  --color-gold-light: #e6cf9b;
-  --color-cream: #f3ecdd;
-  --color-muted: #b4bdd0;
-  --color-ink: #0b1226; /* very dark blue, used for text on gold buttons */
+  --color-charcoal: #30343b; /* main page background */
+  --color-deep: #22252b; /* a darker charcoal: shadows, input boxes, text on gold buttons */
+  --color-graphite: #454b54; /* cards and other raised surfaces */
+  --color-silver: #b8bdc5; /* borders, icons, links, paragraph text */
+  --color-mist: #a7adb6; /* small, supporting text */
+  --color-gold: #b99a5b; /* antique gold: buttons, active link, highlights */
+  --color-gold-light: #d3b677; /* a lighter gold, for gold text and icons on dark */
+  --color-ivory: #f0eee8; /* headings and important text */
 
-  --font-sans: "Inter", system-ui, "Noto Sans Bengali", Arial, sans-serif;
+  /* Inter for English, Noto Sans Bengali takes over for বাংলা letters */
+  --font-sans: "Inter", "Noto Sans Bengali", system-ui, Arial, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
+  /* Big headlines. Cormorant has no Bangla letters, so the browser automatically
+     uses Noto Serif Bengali for them (the next font in the list). */
+  --font-display: "Cormorant Garamond", "Noto Serif Bengali", Georgia, "Times New Roman", serif;
+
+  /* A gentle "rise and fade in", used on the login card (always with motion-safe:, so it is skipped
+     for people who asked their computer to reduce motion) */
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }

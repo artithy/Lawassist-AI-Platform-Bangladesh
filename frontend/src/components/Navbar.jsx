@@ -1,47 +1,56 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import LanguageSwitch from './LanguageSwitch'
+import { useLanguage } from '../i18n/useLanguage'
 
-// All the navigation links live in ONE list.
-// Each link has a path (URL) and a label in both languages.
+// Each link has a path (URL) and the NAME of its text in translations.js.
+// The words themselves are not written here - they come from the dictionary.
+// "Explore Laws" goes to the "Areas of Law" section on the Home page ("/" + "#areas").
+// The Home page then scrolls down to that section by itself (see Home.jsx).
 const navLinks = [
-  { path: '/', english: 'Home', bangla: 'হোম' },
-  { path: '/laws', english: 'Explore Laws', bangla: 'আইন অনুসন্ধান' },
-  { path: '/assistant', english: 'AI Legal Assistant', bangla: 'এআই আইনি সহকারী' },
-  { path: '/lawyers', english: 'Find a Lawyer', bangla: 'আইনজীবী খুঁজুন' },
-  { path: '/about', english: 'About', bangla: 'আমাদের সম্পর্কে' },
+  { path: '/', textKey: 'home' },
+  { path: '/', hash: '#areas', textKey: 'exploreLaws' },
+  { path: '/assistant', textKey: 'aiAssistant' },
+  { path: '/lawyers', textKey: 'findLawyer' },
+  { path: '/about', textKey: 'about' },
 ]
 
-// Tailwind classes are just text, so we can store them in variables.
-// NOTE: "lg:" means "only on screens 1024px wide or more" (desktop).
-// Without "lg:", the class applies to every screen size (mobile first).
-// "xl:" means 1280px or more. We use it to add a little more spacing on big screens.
-
-// NavLink calls this function and tells us if the link is the current page.
-function getNavLinkClass({ isActive }) {
-  const base =
-    'block whitespace-nowrap py-3 text-base font-medium transition-colors lg:py-0 lg:text-sm'
-
-  if (isActive) {
-    return base + ' text-gold-light'
+// Is this link the current page? ("Home" and "Explore Laws" share the "/" page,
+// so we also look at the #areas part of the address to tell them apart.)
+function isLinkActive(link, location) {
+  if (link.path === '/') {
+    const onAreas = location.hash === '#areas'
+    return location.pathname === '/' && (link.hash ? onAreas : !onAreas)
   }
-  return base + ' text-muted hover:text-cream'
+  return location.pathname === link.path || location.pathname.startsWith(link.path + '/')
 }
 
-function getLanguageButtonClass(isSelected) {
+// The current page gets an ivory text colour and a small gold line underneath.
+function getNavLinkClass(isActive) {
   const base =
-    'cursor-pointer whitespace-nowrap rounded-full px-3 py-2 text-[0.9rem] xl:px-4 font-medium transition-colors'
+    'relative block whitespace-nowrap py-3 text-[15px] font-medium transition-colors lg:py-2 lg:text-[13px] 2xl:text-[14.5px] '
 
-  if (isSelected) {
-    return base + ' bg-gold font-semibold text-ink'
+  if (isActive) {
+    return (
+      base +
+      'text-ivory lg:after:absolute lg:after:inset-x-0 lg:after:-bottom-1 lg:after:h-0.5 lg:after:rounded-full lg:after:bg-gold'
+    )
   }
-  return base + ' text-muted hover:text-cream'
+  return base + 'text-silver hover:text-ivory'
 }
 
 function Navbar() {
-  // State 1: which language is selected? ('english' or 'bangla')
-  const [language, setLanguage] = useState('english')
+  const { language, t } = useLanguage()
+  const location = useLocation()
 
-  // State 2: is the mobile menu open? (true or false)
+  // English capitals look good with wide letter spacing. Bangla letters join each other,
+  // so spacing would break them apart - for Bangla we use no spacing and a slightly bigger size.
+  let taglineClass = 'mt-1 text-[8px] tracking-[0.2em] text-silver'
+  if (language === 'bn') {
+    taglineClass = 'mt-1 text-[10px] text-silver'
+  }
+
+  // Is the mobile menu open? (true or false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   function toggleMenu() {
@@ -52,23 +61,11 @@ function Navbar() {
     setMenuOpen(false)
   }
 
-  // Give this function an English word and a Bangla word.
-  // It returns the one that matches the selected language.
-  function getLabel(english, bangla) {
-    if (language === 'english') {
-      return english
-    }
-    return bangla
-  }
-
-  // Classes for the menu panel.
-  // Mobile: a dropdown panel under the navbar.
-  // Desktop (lg:): a normal row inside the navbar.
+  // Mobile: a dropdown panel under the bar.  Desktop (lg:): a normal row.
   let menuClass =
-    'absolute left-0 right-0 top-full flex-col gap-5 border-b border-gold/20 bg-navy px-5 pb-6 pt-3 ' +
-    'lg:static lg:ml-6 xl:ml-10 lg:flex lg:flex-1 lg:flex-row lg:items-center lg:justify-between lg:border-b-0 lg:bg-transparent lg:p-0'
+    'absolute left-0 right-0 top-full flex-col gap-5 border-b border-silver/15 bg-charcoal px-5 pb-6 pt-3 ' +
+    'lg:static lg:ml-4 xl:ml-8 lg:flex lg:flex-1 lg:flex-row lg:items-center lg:justify-between lg:border-b-0 lg:bg-transparent lg:p-0'
 
-  // On mobile, show the menu only when it is open.
   if (menuOpen) {
     menuClass = menuClass + ' flex'
   } else {
@@ -76,100 +73,84 @@ function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gold/20 bg-navy">
-      <div className="mx-auto flex h-[75px] max-w-[1440px] items-center px-5 lg:px-6 xl:px-10">
-        {/* ----- Brand (logo + name). Clicking it goes Home ----- */}
-        <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
-          <span className="flex size-[34px] items-center justify-center rounded-full border border-gold text-gold">
-            {/* Simple justice-scale icon drawn with SVG */}
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 3v18" />
-              <path d="M7 21h10" />
-              <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
-              <path d="m2 16 3-8 3 8c-.9.65-1.9 1-3 1s-2.1-.35-3-1Z" />
-              <path d="m16 16 3-8 3 8c-.9.65-1.9 1-3 1s-2.1-.35-3-1Z" />
-            </svg>
-          </span>
-          <span className="whitespace-nowrap font-serif text-2xl font-medium text-cream">
-            LawAssist <span className="text-gold">AI</span>
+    // The bar is see-through, so the Supreme Court picture shows behind it on the home page.
+    <header className="sticky top-0 z-50 border-b border-silver/5 bg-charcoal/40 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1920px] items-center px-5 lg:px-5 xl:px-[5.5%]">
+        {/* ----- Brand: courthouse icon + name + small subtitle ----- */}
+        <Link to="/" className="flex shrink-0 items-center gap-2.5" onClick={closeMenu}>
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gold-light"
+            aria-hidden="true"
+          >
+            <path d="M12 3 3.5 7.5h17L12 3Z" />
+            <path d="M3.5 21h17" />
+            <path d="M5.5 18.5h13" />
+            <path d="M6.5 10.5v6M10 10.5v6M14 10.5v6M17.5 10.5v6" />
+          </svg>
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-[22px] font-medium text-ivory 2xl:text-[26px]">LawAssist AI</span>
+            <span className={taglineClass}>{t.nav.tagline}</span>
           </span>
         </Link>
 
         {/* ----- Hamburger button (hidden on desktop with "lg:hidden") ----- */}
         <button
-          className="ml-auto cursor-pointer rounded-lg border border-gold/35 px-3 py-1.5 text-xl text-gold lg:hidden"
+          type="button"
+          className="ml-auto cursor-pointer rounded-lg border border-silver/30 bg-deep/50 px-3 py-1.5 text-xl text-gold-light lg:hidden"
           onClick={toggleMenu}
-          aria-label="Toggle menu"
+          aria-label={t.nav.menu}
           aria-expanded={menuOpen}
         >
           {menuOpen ? '✕' : '☰'}
         </button>
 
-        {/* ----- Links + buttons. On mobile this drops down when open ----- */}
+        {/* ----- Links + language + buttons ----- */}
         <div className={menuClass}>
-          <ul className="flex flex-col lg:flex-1 lg:flex-row lg:justify-center lg:gap-3 xl:gap-6">
+          <ul className="flex flex-col lg:flex-1 lg:flex-row lg:justify-center lg:gap-4 xl:gap-9">
             {navLinks.map(function (link) {
+              const isActive = isLinkActive(link, location)
               return (
-                <li key={link.path}>
-                  {/* NavLink knows if this link is the current page (isActive) */}
-                  <NavLink
-                    to={link.path}
-                    end={link.path === '/'}
-                    className={getNavLinkClass}
+                <li key={link.path + (link.hash || '')}>
+                  <Link
+                    to={link.path + (link.hash || '')}
+                    className={getNavLinkClass(isActive)}
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={closeMenu}
                   >
-                    {getLabel(link.english, link.bangla)}
-                  </NavLink>
+                    {t.nav[link.textKey]}
+                  </Link>
                 </li>
               )
             })}
           </ul>
 
-          <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:gap-3 xl:gap-6">
-            {/* Language toggle */}
-            <div className="flex items-center justify-center rounded-full border border-gold/35 p-1">
-              <button
-                className={getLanguageButtonClass(language === 'bangla')}
-                onClick={function () {
-                  setLanguage('bangla')
-                }}
-              >
-                বাংলা
-              </button>
-              <button
-                className={getLanguageButtonClass(language === 'english')}
-                onClick={function () {
-                  setLanguage('english')
-                }}
-              >
-                English
-              </button>
+          <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:gap-2.5 xl:gap-5">
+            <div className="flex justify-center">
+              <LanguageSwitch />
             </div>
 
             <Link
               to="/login"
-              className="p-1 text-center text-sm font-medium text-cream transition-colors hover:text-gold-light"
+              className="p-1 text-center text-[13px] font-medium text-ivory transition-colors hover:text-gold-light"
               onClick={closeMenu}
             >
-              {getLabel('Login', 'লগইন')}
+              {t.nav.login}
             </Link>
 
             <Link
               to="/register"
-              className="whitespace-nowrap rounded-full bg-linear-to-br from-gold-light to-gold px-5 py-3 text-center text-sm font-semibold text-ink shadow-lg shadow-gold/25 transition hover:-translate-y-px hover:shadow-xl hover:shadow-gold/40"
+              className="whitespace-nowrap rounded-full bg-gold px-4 py-2.5 xl:px-5 2xl:px-6 2xl:py-3 2xl:text-[14px] text-center text-[13px] font-semibold text-deep shadow-lg shadow-gold/30 transition hover:-translate-y-px hover:brightness-105"
               onClick={closeMenu}
             >
-              {getLabel('Get Started', 'শুরু করুন')}
+              {t.nav.getStarted}
             </Link>
           </div>
         </div>
