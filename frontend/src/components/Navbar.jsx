@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import LanguageSwitch from './LanguageSwitch'
 import { useLanguage } from '../i18n/useLanguage'
+import { useAuth } from '../auth/useAuth'
 
 // Each link has a path (URL) and the NAME of its text in translations.js.
 // The words themselves are not written here - they come from the dictionary.
@@ -26,14 +27,16 @@ function isLinkActive(link, location) {
 }
 
 // The current page gets an ivory text colour and a small gold line underneath.
-function getNavLinkClass(isActive) {
+function getNavLinkClass(isActive, dark) {
+  // dark = the AI Legal Assistant page: a slightly larger text on wide screens (see Navbar below)
   const base =
-    'relative block whitespace-nowrap py-3 text-[15px] font-medium transition-colors lg:py-2 lg:text-[13px] 2xl:text-[14.5px] '
+    'relative block whitespace-nowrap py-3 text-[15px] font-medium transition-colors lg:py-2 lg:text-[13px] ' +
+    (dark ? 'lg:text-[13.5px] 2xl:text-[16px] ' : '2xl:text-[14.5px] ')
 
   if (isActive) {
     return (
       base +
-      'text-ivory lg:after:absolute lg:after:inset-x-0 lg:after:-bottom-1 lg:after:h-0.5 lg:after:rounded-full lg:after:bg-gold'
+      'text-ivory lg:after:absolute lg:after:inset-x-0 lg:after:-bottom-1 lg:after:h-0.5 lg:after:rounded-full lg:after:bg-gold ' + (dark ? '2xl:after:-bottom-[9px]' : '')
     )
   }
   return base + 'text-silver hover:text-ivory'
@@ -42,10 +45,18 @@ function getNavLinkClass(isActive) {
 function Navbar() {
   const { language, t } = useLanguage()
   const location = useLocation()
+  const navigate = useNavigate()
+  const { session, signOut } = useAuth()
+
+  // The AI Legal Assistant page has its own dark look (charcoal/black with gold). Every other page keeps the normal bar.
+  const dark = location.pathname === '/assistant'
 
   // English capitals look good with wide letter spacing. Bangla letters join each other,
   // so spacing would break them apart - for Bangla we use no spacing and a slightly bigger size.
   let taglineClass = 'mt-1 text-[8px] tracking-[0.2em] text-silver'
+  if (dark) {
+    taglineClass = 'mt-1 text-[8px] tracking-[0.2em] text-silver 2xl:mt-[7px] 2xl:text-[10px]'
+  }
   if (language === 'bn') {
     taglineClass = 'mt-1 text-[10px] text-silver'
   }
@@ -61,9 +72,16 @@ function Navbar() {
     setMenuOpen(false)
   }
 
+  // Log out, then go to the login page
+  async function handleLogout() {
+    closeMenu()
+    await signOut()
+    navigate('/login', { replace: true })
+  }
+
   // Mobile: a dropdown panel under the bar.  Desktop (lg:): a normal row.
   let menuClass =
-    'absolute left-0 right-0 top-full flex-col gap-5 border-b border-silver/15 bg-charcoal px-5 pb-6 pt-3 ' +
+    'absolute left-0 right-0 top-full flex-col gap-5 border-b border-silver/15 px-5 pb-6 pt-3 ' + (dark ? 'bg-[#10161a] ' : 'bg-charcoal ') +
     'lg:static lg:ml-4 xl:ml-8 lg:flex lg:flex-1 lg:flex-row lg:items-center lg:justify-between lg:border-b-0 lg:bg-transparent lg:p-0'
 
   if (menuOpen) {
@@ -74,8 +92,8 @@ function Navbar() {
 
   return (
     // The bar is see-through, so the Supreme Court picture shows behind it on the home page.
-    <header className="sticky top-0 z-50 border-b border-silver/5 bg-charcoal/40 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1920px] items-center px-5 lg:px-5 xl:px-[5.5%]">
+    <header className={'sticky top-0 z-50 border-b ' + (dark ? 'border-[#31373c] bg-[#10161a]' : 'border-silver/5 bg-charcoal/40 backdrop-blur-md')}>
+      <div className={'mx-auto flex h-16 max-w-[1920px] items-center px-5 lg:px-5 xl:px-[5.5%] ' + (dark ? 'lg:h-[73px] 2xl:h-[88px] 2xl:pt-1.5' : '')}>
         {/* ----- Brand: courthouse icon + name + small subtitle ----- */}
         <Link to="/" className="flex shrink-0 items-center gap-2.5" onClick={closeMenu}>
           <svg
@@ -87,7 +105,7 @@ function Navbar() {
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-gold-light"
+            className={dark ? 'text-[#e3b261]' : 'text-gold-light'}
             aria-hidden="true"
           >
             <path d="M12 3 3.5 7.5h17L12 3Z" />
@@ -114,14 +132,14 @@ function Navbar() {
 
         {/* ----- Links + language + buttons ----- */}
         <div className={menuClass}>
-          <ul className="flex flex-col lg:flex-1 lg:flex-row lg:justify-center lg:gap-4 xl:gap-9">
+          <ul className={'flex flex-col lg:flex-1 lg:flex-row lg:justify-center lg:gap-4 xl:gap-9 ' + (dark ? '2xl:gap-[44px]' : '')}>
             {navLinks.map(function (link) {
               const isActive = isLinkActive(link, location)
               return (
                 <li key={link.path + (link.hash || '')}>
                   <Link
                     to={link.path + (link.hash || '')}
-                    className={getNavLinkClass(isActive)}
+                    className={getNavLinkClass(isActive, dark)}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={closeMenu}
                   >
@@ -134,24 +152,36 @@ function Navbar() {
 
           <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:gap-2.5 xl:gap-5">
             <div className="flex justify-center">
-              <LanguageSwitch />
+              <LanguageSwitch large={dark} />
             </div>
 
-            <Link
-              to="/login"
-              className="p-1 text-center text-[13px] font-medium text-ivory transition-colors hover:text-gold-light"
-              onClick={closeMenu}
-            >
-              {t.nav.login}
-            </Link>
+            {session ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className={'cursor-pointer whitespace-nowrap rounded-full border border-gold/60 px-4 py-2.5 text-center text-[13px] font-semibold text-ivory transition-colors hover:bg-gold hover:text-deep xl:px-5 ' + (dark ? 'lg:py-3 lg:text-[13.5px] 2xl:px-[26px] 2xl:py-[13px] 2xl:text-[16px] 2xl:font-medium' : '2xl:px-6 2xl:py-3 2xl:text-[14px]')}
+              >
+                {t.nav.logout}
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="p-1 text-center text-[13px] font-medium text-ivory transition-colors hover:text-gold-light"
+                  onClick={closeMenu}
+                >
+                  {t.nav.login}
+                </Link>
 
-            <Link
-              to="/register"
-              className="whitespace-nowrap rounded-full bg-gold px-4 py-2.5 xl:px-5 2xl:px-6 2xl:py-3 2xl:text-[14px] text-center text-[13px] font-semibold text-deep shadow-lg shadow-gold/30 transition hover:-translate-y-px hover:brightness-105"
-              onClick={closeMenu}
-            >
-              {t.nav.getStarted}
-            </Link>
+                <Link
+                  to="/register"
+                  className="whitespace-nowrap rounded-full bg-gold px-4 py-2.5 xl:px-5 2xl:px-6 2xl:py-3 2xl:text-[14px] text-center text-[13px] font-semibold text-deep shadow-lg shadow-gold/30 transition hover:-translate-y-px hover:brightness-105"
+                  onClick={closeMenu}
+                >
+                  {t.nav.getStarted}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

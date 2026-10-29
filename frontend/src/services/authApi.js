@@ -1,71 +1,76 @@
-// The ONE place that talks to a sign-up / sign-in backend.
-//
-// This project does not have an authentication backend yet. Until you connect one, the Register and Login
-// pages run in DEMO MODE: they check what was typed, but nothing is created, saved or sent anywhere.
-//
-// To connect a real backend, put its address in frontend/.env and restart `npm run dev`:
-//
-//     VITE_AUTH_API_URL=http://localhost:8000/api/auth
-//
-// The pages then call:
-//     POST {VITE_AUTH_API_URL}/register   body { name, email, password, language }
-//     POST {VITE_AUTH_API_URL}/login      body { email, password, remember }   (remember = the "Remember me" tick-box)
-// and expect a JSON answer  { "user": { "name": "...", "email": "..." } }  on success.
-// Error statuses that are understood:  409 on /register = e-mail already used,  401 on /login = wrong e-mail or password.
-// Anything else is shown as a general error. (This shape is a suggestion - change it here if your backend differs.)
-//
-// Security notes for the real backend:
-//   - passwords must be hashed on the server (e.g. bcrypt or argon2) and are only ever sent over HTTPS;
-//   - prefer a session in an httpOnly cookie (this file sends cookies with `credentials: 'include'`) over keeping
-//     a token in localStorage, where any script on the page can read it;
-//   - this front end never stores the password anywhere.
+import { supabase, isAuthConfigured, setRememberMe } from './supabaseClient'
 
-const BASE_URL = (import.meta.env.VITE_AUTH_API_URL || '').replace(/\/+$/, '')
+// E-mail + password authentication with Supabase.
+//
+// Every function here NEVER throws. It returns either
+//     { session }   (or { status: ... })  when it worked, or
+//     { errorKey }  the name of a message in translations.js (t.auth.errors.<errorKey>)
+// so the pages only have to show the right translated message.
 
-// true only when an address has been set
-export const isAuthConfigured = BASE_URL !== ''
+// Turn a Supabase error into one of our message names
+function errorKeyOf(error, fallback) {
+  const message = String((error && error.message) || '').toLowerCase()
+  const code = String((error && error.code) || '').toLowerCase()
+  const status = error && error.status
 
-// An error with a short "code" the pages can turn into a translated message
-function makeError(code, message) {
-  const error = new Error(message)
-  error.code = code
-  return error
+  if (code === 'email_not_confirmed' || message.includes('email not confirmed')) return 'emailNotConfirmed'
+  if (code === 'invalid_credentials' || message.includes('invalid login credentials')) return 'invalidCredentials'
+  if (code === 'user_already_exists' || code === 'email_exists' || message.includes('already registered')) return 'emailTaken'
+  if (code === 'weak_password') return 'passwordWeak'
+  if (status === 429 || code.includes('rate_limit')) return 'tooManyRequests'
+  if (status === 0 || error?.name === 'AuthRetryableFetchError' || message.includes('failed to fetch') || message.includes('network')) return 'network'
+  return fallback
 }
 
-async function post(path, body, statusCodes) {
-  if (!isAuthConfigured) {
-    throw makeError('NOT_CONFIGURED', 'The authentication backend is not configured.')
-  }
-
-  let response
+export async function loginWithEmail({ email, password, remember }) {
+  if (!isAuthConfigured) return { errorKey: 'notConfigured' }
+  setRememberMe(remember)
   try {
-    response = await fetch(BASE_URL + path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body),
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return { errorKey: errorKeyOf(error, 'loginFailed') }
+    if (!data || !data.session) return { errorKey: 'loginFailed' }
+    return { session: data.session }
+  } catch (error) {
+    return { errorKey: errorKeyOf(error, 'loginFailed') }
+  }
+}
+
+// status "signedIn":     e-mail confirmation is OFF in Supabase, so a session already exists
+// status "confirmEmail": e-mail confirmation is ON, so the person must open the link we e-mailed
+export async function registerWithEmail({ name, email, password, language }) {
+  if (!isAuthConfigured) return { errorKey: 'notConfigured' }
+  setRememberMe(true)
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name, language },
+        // where the confirmation link in the e-mail brings the person back to
+        // (this address must be listed under Authentication -> URL Configuration in Supabase)
+        emailRedirectTo: window.location.origin + '/login',
+      },
     })
+    if (error) return { errorKey: errorKeyOf(error, 'registerFailed') }
+    if (data && data.session) return { status: 'signedIn', session: data.session }
+    // With e-mail confirmation on, Supabase answers "success" for an e-mail that already has an account,
+    // but the returned user then has no identities. Tell the person instead of pretending a mail was sent.
+    if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return { errorKey: 'emailTaken' }
+    }
+    return { status: 'confirmEmail' }
+  } catch (error) {
+    return { errorKey: errorKeyOf(error, 'registerFailed') }
+  }
+}
+
+export async function logout() {
+  if (!isAuthConfigured) return {}
+  try {
+    // "local": ends the session in THIS browser only
+    await supabase.auth.signOut({ scope: 'local' })
   } catch {
-    throw makeError('NETWORK', 'The server could not be reached.')
+    // even if the server cannot be reached, the page below clears its own copy of the session
   }
-
-  if (!response.ok) {
-    throw makeError(statusCodes[response.status] || 'FAILED', 'The server answered with status ' + response.status)
-  }
-
-  const data = await response.json().catch(function () {
-    return null
-  })
-  if (!data || !data.user || typeof data.user.email !== 'string') {
-    throw makeError('FAILED', 'The server sent an answer in an unexpected format.')
-  }
-  return { user: { name: typeof data.user.name === 'string' ? data.user.name : '', email: data.user.email } }
-}
-
-export function registerUser({ name, email, password, language }) {
-  return post('/register', { name, email, password, language }, { 409: 'EMAIL_TAKEN' })
-}
-
-export function loginUser({ email, password, remember }) {
-  return post('/login', { email, password, remember: Boolean(remember) }, { 401: 'INVALID_CREDENTIALS' })
+  return {}
 }

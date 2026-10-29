@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+.DS_Store
+_backup_before_dark_assistant/
+_backup_before_src_cleanup/

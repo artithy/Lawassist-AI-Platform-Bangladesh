@@ -1,34 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../i18n/useLanguage'
-import { Field, Icon, Notice, PasswordField, SubmitButton } from '../components/AuthUi'
-import GoogleSignInDemo, { GoogleLogo } from '../components/GoogleSignInDemo'
+import { useAuth } from '../auth/useAuth'
+import { Field, GoogleButton, Icon, Notice, OrDivider, PasswordField, SubmitButton } from '../components/AuthUi'
 import { checkAnyPassword, checkEmail } from '../services/authValidation'
-import { isAuthConfigured, loginUser } from '../services/authApi'
-import { isGoogleSignInConnected, signInWithGoogle } from '../services/googleAuth'
 import courthouse from '../assets/areas-courthouse.webp'
 
 // The log-in page: /login
 //
-//   Sign In button         -> checks the form. With no backend it says so and offers demo mode (nobody is signed in).
-//   Continue with Google   -> opens a small dialog; real Google sign-in is not connected (see services/googleAuth.js).
-//   Continue in Demo Mode  -> goes to /assistant. That is the ONLY way this page sends you there without a real sign-in.
+//   Sign In               -> signs in with e-mail + password (Supabase). Success leads to the AI Legal Chat.
+//   Continue with Google  -> sends the browser to Google; Supabase brings it back to /assistant when it worked.
+//   Already signed in     -> this page sends you straight on to the chat.
 //
-// Nothing typed here is stored in the browser. "Remember me" is only passed to a real backend, if one is connected.
+// Nothing typed here is stored by this site. "Remember me" only decides whether the session survives closing the browser.
 function Login() {
   const { language, t } = useLanguage()
   const a = t.auth
   const l = a.login
   const isBn = language === 'bn'
-  const navigate = useNavigate()
+  const location = useLocation()
+  const { session, signIn, signInWithGoogle } = useAuth()
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [remember, setRemember] = useState(false)
   const [touched, setTouched] = useState({})
   const [serverError, setServerError] = useState('') // name of a message in a.errors
   const [busy, setBusy] = useState(false)
-  const [status, setStatus] = useState('') // '' | 'notConnected' | 'forgot'
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [status, setStatus] = useState('') // '' | 'forgot'
   const statusRef = useRef(null)
 
   const keys = { email: checkEmail(form.email), password: checkAnyPassword(form.password) }
@@ -55,9 +53,11 @@ function Login() {
     [status],
   )
 
-  function goToDemo() {
-    // "demo" tells the chat page to show "Demo visitor - not signed in" instead of a profile
-    navigate('/assistant', { state: { demo: true } })
+  // Already signed in (or just signed in): go to the AI Legal Chat.
+  // A question typed on the home page (kept by ProtectedRoute) is passed on, so it is not lost.
+  if (session) {
+    const question = location.state && location.state.question
+    return <Navigate to="/assistant" replace state={question ? { question: question } : null} />
   }
 
   async function handleSubmit(event) {
@@ -73,37 +73,24 @@ function Login() {
       return
     }
 
-    // No backend: say so, throw the password away, offer demo mode. Nobody is signed in.
-    if (!isAuthConfigured) {
-      setForm({ ...form, password: '' })
-      setTouched({})
-      setStatus('notConnected')
-      return
-    }
-
     setBusy(true)
-    try {
-      const result = await loginUser({ email: form.email.trim(), password: form.password, remember: remember })
-      navigate('/assistant', { state: { user: result.user } })
-    } catch (error) {
-      setServerError(error.code === 'INVALID_CREDENTIALS' ? 'invalidCredentials' : 'loginFailed')
-    } finally {
+    const result = await signIn({ email: form.email.trim(), password: form.password, remember: remember })
+    if (result.errorKey) {
+      setServerError(result.errorKey)
       setBusy(false)
     }
+    // on success the session is set and this page redirects (see "if (session)" above)
   }
 
   async function handleGoogle() {
     setStatus('')
     setServerError('')
-    if (!isGoogleSignInConnected) {
-      setDialogOpen(true) // the honest "not connected yet" dialog
-      return
-    }
-    try {
-      const result = await signInWithGoogle()
-      navigate('/assistant', { state: { user: result.user } })
-    } catch {
-      setServerError('loginFailed')
+    setBusy(true)
+    const result = await signInWithGoogle({ remember: remember })
+    // on success the browser is already on its way to Google; only an error comes back here
+    if (result.errorKey) {
+      setServerError(result.errorKey)
+      setBusy(false)
     }
   }
 
@@ -183,31 +170,11 @@ function Login() {
             <h2 className={'mt-5 font-display font-medium text-ivory ' + (isBn ? 'text-[30px] leading-[1.35]' : 'text-[36px] leading-[1.05]')}>{l.welcome}</h2>
             <p className={'mt-1.5 text-mist ' + (isBn ? 'text-[16px]' : 'text-[14.5px]')}>{l.subtitle}</p>
 
-            {!isAuthConfigured && (
-              <p className={'mt-4 inline-flex items-center gap-2 rounded-full border border-gold/35 bg-gold/[0.07] px-3 py-1 text-gold-light ' + (isBn ? 'text-[13.5px]' : 'text-[12px]')}>
-                <span aria-hidden="true" className="size-1.5 rounded-full bg-gold" />
-                {l.demoPill}
-              </p>
-            )}
-
             <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5">
-              {/* Status messages (not connected / forgot password) and errors */}
+              {/* Status message ("forgot password") and errors */}
               {status && (
                 <div ref={statusRef} tabIndex={-1} role="status" className="outline-none">
-                  {status === 'notConnected' ? (
-                    <Notice title={l.notConnectedTitle}>
-                      <p>{l.notConnectedText}</p>
-                      <button type="button" onClick={goToDemo} className={'mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-gold/70 px-4 font-medium text-ivory transition-colors hover:bg-gold hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ' + (isBn ? 'text-[15px]' : 'text-[13.5px]')}>
-                        {l.demoAction}
-                        <Icon size={15}>
-                          <path d="M5 12h14" />
-                          <path d="m13 6 6 6-6 6" />
-                        </Icon>
-                      </button>
-                    </Notice>
-                  ) : (
-                    <Notice>{l.forgotInfo}</Notice>
-                  )}
+                  <Notice>{l.forgotInfo}</Notice>
                 </div>
               )}
               {serverError && (
@@ -224,7 +191,7 @@ function Login() {
                   <input type="checkbox" id="login-remember" checked={remember} onChange={function (e) { setRemember(e.target.checked) }} className="size-[17px] cursor-pointer accent-[#b99a5b]" />
                   {l.remember}
                 </label>
-                {/* UI only: there is no password reset yet */}
+                {/* The message only says that password reset is not available yet */}
                 <button type="button" onClick={function () { setStatus('forgot') }} className={'cursor-pointer text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold ' + (isBn ? 'text-[15.5px]' : 'text-[14px]')}>
                   {l.forgot}
                 </button>
@@ -233,17 +200,11 @@ function Login() {
               <SubmitButton busy={busy}>{busy ? l.submitting : l.submit}</SubmitButton>
             </form>
 
-            {/* OR divider */}
-            <div className="my-6 flex items-center gap-4" role="separator" aria-label={l.or}>
-              <span className="h-px flex-1 bg-silver/15" />
-              <span className={'text-mist ' + (isBn ? 'text-[14px]' : 'text-[12px] tracking-[0.25em]')}>{l.or}</span>
-              <span className="h-px flex-1 bg-silver/15" />
-            </div>
+            <OrDivider label={l.or} />
 
-            <button type="button" onClick={handleGoogle} disabled={busy} className={'flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-ivory/80 bg-ivory font-semibold text-deep shadow-lg shadow-black/30 transition hover:-translate-y-px hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light disabled:cursor-not-allowed disabled:opacity-60 ' + (isBn ? 'text-[16.5px]' : 'text-[15px]')}>
-              <GoogleLogo />
+            <GoogleButton onClick={handleGoogle} disabled={busy}>
               {l.google}
-            </button>
+            </GoogleButton>
 
             <p className={'mt-7 text-center text-mist ' + (isBn ? 'text-[16px]' : 'text-[14px]')}>
               {l.noAccount}{' '}
@@ -255,16 +216,6 @@ function Login() {
         </section>
       </div>
 
-      <GoogleSignInDemo
-        open={dialogOpen}
-        onClose={function () {
-          setDialogOpen(false)
-        }}
-        onContinue={function () {
-          setDialogOpen(false)
-          goToDemo()
-        }}
-      />
     </main>
   )
 }

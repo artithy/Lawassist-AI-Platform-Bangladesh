@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../i18n/useLanguage'
-import { Eyebrow, Field, Icon, Notice, PasswordField, SubmitButton } from '../components/AuthUi'
+import { useAuth } from '../auth/useAuth'
+import { Eyebrow, Field, GoogleButton, Icon, Notice, OrDivider, PasswordField, SubmitButton } from '../components/AuthUi'
 import { checkConfirm, checkEmail, checkName, checkNewPassword } from '../services/authValidation'
-import { isAuthConfigured, registerUser } from '../services/authApi'
 
 const emptyForm = { name: '', email: '', password: '', confirm: '' }
 
@@ -14,6 +14,7 @@ function Register() {
   const r = a.register
   const isBn = language === 'bn'
   const navigate = useNavigate()
+  const { session, signUp, signInWithGoogle } = useAuth()
 
   const [form, setForm] = useState(emptyForm)
   const [agreed, setAgreed] = useState(false)
@@ -21,7 +22,7 @@ function Register() {
   const [serverError, setServerError] = useState('') // name of a message in a.errors
   const [emailTaken, setEmailTaken] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [demoDone, setDemoDone] = useState(false) // demo mode: the details were checked and then discarded
+  const [verifyEmail, setVerifyEmail] = useState('') // set when Supabase asks the person to confirm their e-mail
   const [showSummary, setShowSummary] = useState(false)
 
   // The error KEY of every box (empty text = fine). Words come later, from the current language.
@@ -69,35 +70,42 @@ function Register() {
     }
     setShowSummary(false)
 
-    // DEMO MODE: no backend, so nothing is created. The password is thrown away right away.
-    if (!isAuthConfigured) {
-      setForm({ ...form, password: '', confirm: '' })
+    setBusy(true)
+    const result = await signUp({ name: form.name.trim(), email: form.email.trim(), password: form.password, language: language })
+    setBusy(false)
+
+    if (result.errorKey === 'emailTaken') {
+      setEmailTaken(true)
+      setTouched({ ...touched, email: true })
+      // the boxes are switched off while waiting, so move the cursor a moment later
+      setTimeout(function () {
+        const element = document.getElementById('register-email')
+        if (element) element.focus()
+      }, 50)
+    } else if (result.errorKey) {
+      setServerError(result.errorKey)
+    } else if (result.status === 'confirmEmail') {
+      // e-mail confirmation is on: ask the person to check their inbox. The password is thrown away right now.
+      setVerifyEmail(form.email.trim())
+      setForm(emptyForm)
       setAgreed(false)
       setTouched({})
-      setDemoDone(true)
-      return
     }
+    // status "signedIn": the session is set and this page redirects to the chat (see "if (session)" below)
+  }
 
+  async function handleGoogle() {
+    setServerError('')
     setBusy(true)
-    try {
-      const result = await registerUser({ name: form.name.trim(), email: form.email.trim(), password: form.password, language })
-      navigate('/dashboard', { state: { user: result.user } })
-    } catch (error) {
-      if (error.code === 'EMAIL_TAKEN') {
-        setEmailTaken(true)
-        setTouched({ ...touched, email: true })
-        // the boxes are switched off while waiting, so move the cursor a moment later
-        setTimeout(function () {
-          const element = document.getElementById('register-email')
-          if (element) element.focus()
-        }, 50)
-      } else {
-        setServerError('registerFailed')
-      }
-    } finally {
+    const result = await signInWithGoogle({ remember: true })
+    if (result.errorKey) {
+      setServerError(result.errorKey)
       setBusy(false)
     }
   }
+
+  // Signed in already (or signed up with e-mail confirmation switched off): go to the AI Legal Chat
+  if (session) return <Navigate to="/assistant" replace />
 
   const sideItemText = isBn ? 'text-[17px] leading-[1.7]' : 'text-[15px] leading-[1.6]'
 
@@ -129,28 +137,28 @@ function Register() {
 
         {/* ================= Right: the form card ================= */}
         <div className="rounded-[22px] border border-silver/15 bg-[#12151a]/95 p-5 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.9)] sm:p-8">
-          {/* Honest mode label */}
-          {!isAuthConfigured && !demoDone && (
-            <div className="mb-6">
-              <Notice title={a.demoLabel}>{r.demoText}</Notice>
-            </div>
-          )}
-
-          {demoDone ? (
+          {verifyEmail ? (
             <div role="status">
-              <Notice title={r.resultTitle}>{r.resultText}</Notice>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Link to="/dashboard" className={'inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-gold px-6 font-semibold text-deep transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light ' + (isBn ? 'text-[16px]' : 'text-[15px]')}>
-                  {r.preview}
-                  <Icon size={16}>
-                    <path d="M5 12h14" />
-                    <path d="m13 6 6 6-6 6" />
-                  </Icon>
-                </Link>
-                <button type="button" onClick={function () { setDemoDone(false) }} className={'h-12 cursor-pointer rounded-xl border border-gold/70 px-6 font-medium text-ivory transition-colors hover:bg-gold hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ' + (isBn ? 'text-[16px]' : 'text-[15px]')}>
-                  {r.edit}
-                </button>
-              </div>
+              <span className="flex size-14 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold-light">
+                <Icon size={26}>
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m3 7 9 6 9-6" />
+                </Icon>
+              </span>
+              <h2 className={'mt-5 font-display font-medium text-ivory ' + (isBn ? 'text-[28px] leading-[1.4]' : 'text-[34px] leading-[1.1]')}>{r.verifyTitle}</h2>
+              <p className={'mt-3 text-silver ' + (isBn ? 'text-[17px] leading-[1.85]' : 'text-[15.5px] leading-[1.65]')}>
+                {r.verifyText.split('{email}')[0]}
+                <strong className="break-all font-medium text-ivory">{verifyEmail}</strong>
+                {r.verifyText.split('{email}')[1]}
+              </p>
+              <p className={'mt-2 text-mist ' + (isBn ? 'text-[15.5px] leading-[1.8]' : 'text-[14px]')}>{r.verifyHint}</p>
+              <button type="button" onClick={function () { navigate('/login') }} className={'mt-7 inline-flex h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-gold px-6 font-semibold text-deep transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light ' + (isBn ? 'text-[16px]' : 'text-[15px]')}>
+                {r.verifyButton}
+                <Icon size={16}>
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </Icon>
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -198,15 +206,20 @@ function Register() {
               </div>
 
               <SubmitButton busy={busy}>{busy ? r.submitting : r.submit}</SubmitButton>
+
+              <OrDivider label={a.login.or} />
+              <GoogleButton onClick={handleGoogle} disabled={busy}>
+                {r.google}
+              </GoogleButton>
             </form>
           )}
 
-          <p className={'mt-6 text-center text-mist ' + (isBn ? 'text-[16px]' : 'text-[14px]')}>
+          {!verifyEmail && <p className={'mt-6 text-center text-mist ' + (isBn ? 'text-[16px]' : 'text-[14px]')}>
             {r.haveAccount}{' '}
             <Link to="/login" className="font-medium text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold">
               {r.loginLink}
             </Link>
-          </p>
+          </p>}
         </div>
       </div>
     </main>

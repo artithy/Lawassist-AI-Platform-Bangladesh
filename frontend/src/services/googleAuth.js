@@ -1,18 +1,27 @@
-// Where REAL "Continue with Google" will live.
-//
-// Right now Google sign-in is NOT connected, so the Login page shows a small dialog that says so and offers a
-// clearly labelled demo mode instead. Nothing here talks to Google.
-//
-// To connect real Google sign-in later (for example with Google Identity Services and your backend):
-//   1. create an OAuth client in Google Cloud and keep its client id in frontend/.env (VITE_GOOGLE_CLIENT_ID);
-//   2. implement signInWithGoogle() below so it returns  { user: { name, email } }  after your backend has
-//      verified the Google token (never trust a token that was only checked in the browser);
-//   3. set isGoogleSignInConnected to true. The Login page then calls signInWithGoogle() instead of opening the dialog.
+import { supabase, isAuthConfigured, setRememberMe } from './supabaseClient'
 
-export const isGoogleSignInConnected = false
-
-export async function signInWithGoogle() {
-  const error = new Error('Google sign-in is not connected yet.')
-  error.code = 'NOT_CONNECTED'
-  throw error
+// "Continue with Google" through Supabase OAuth.
+//
+// This sends the browser to Google, and Google sends it back to /assistant. There Supabase finishes the sign-in
+// (the page code in AuthProvider.jsx picks the new session up). It only works after you have:
+//   1. created a Google OAuth client in Google Cloud and put its ID + secret into
+//      Supabase -> Authentication -> Providers -> Google, and
+//   2. added   <your site address>/assistant   to Supabase -> Authentication -> URL Configuration -> Redirect URLs, and
+//      added Supabase's callback address (https://<project-ref>.supabase.co/auth/v1/callback) to the Google client.
+// (README / the notes that came with this change list every step.)
+//
+// Returns {} when the browser is being sent to Google, or { errorKey } when it could not start.
+export async function signInWithGoogle({ remember = true } = {}) {
+  if (!isAuthConfigured) return { errorKey: 'notConfigured' }
+  setRememberMe(remember)
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/assistant' },
+    })
+    if (error) return { errorKey: 'googleFailed' }
+    return {}
+  } catch {
+    return { errorKey: 'googleFailed' }
+  }
 }

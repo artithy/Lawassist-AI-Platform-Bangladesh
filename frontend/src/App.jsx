@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
@@ -10,25 +10,39 @@ import About from './pages/About'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
+  // The chat page (/assistant) is a full-screen app: no footer, and the page itself never scrolls
+  // (only the messages inside the chat do). Every other page keeps the normal footer and layout.
+  const isChat = useLocation().pathname === '/assistant'
+
   return (
-    <div>
+    <div className={isChat ? 'flex h-dvh flex-col overflow-hidden' : undefined}>
       {/* The Navbar is outside <Routes>, so it shows on every page */}
       <Navbar />
       <ScrollToTop />
 
       {/* <Routes> shows ONE page at a time, depending on the URL.
           The wrapper's minimum height keeps the footer down at the bottom on short pages. */}
-      <div className="min-h-[55vh]">
+      <div className={isChat ? 'flex min-h-0 flex-1 flex-col' : 'min-h-[55vh]'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/laws" element={<ExploreLaws />} />
-          <Route path="/assistant" element={<AiAssistant />} />
+          {/* The chat needs a signed-in user: anybody else is sent to /login */}
+          <Route
+            path="/assistant"
+            element={
+              <ProtectedRoute>
+                <AiAssistant />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/lawyers" element={<FindLawyer />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          {/* (old address) /dashboard now just forwards to /assistant */}
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* "*" matches any URL that is not listed above */}
@@ -45,7 +59,7 @@ function App() {
       </div>
 
       {/* The Footer is outside <Routes> too, so it shows on every page */}
-      <Footer />
+      {!isChat && <Footer />}
     </div>
   )
 }
