@@ -182,6 +182,15 @@ const translations = {
         network: 'We could not reach the server. Please check your connection and try again.',
       },
       register: {
+        line1: 'Your Legal Journey',
+        line2: 'Begins Here',
+        description:
+          'Create an account to ask legal questions in plain Bangla and English, explore the areas of Bangladeshi law, and find the right lawyer.',
+        benefits: [
+          { title: 'Plain Bangla and English', text: 'Clear explanations of Bangladeshi law, without the legal jargon.' },
+          { title: 'Ask the AI Legal Assistant', text: 'Put your question into a simple chat, in Bangla or English.' },
+          { title: 'Find a lawyer', text: 'Browse advocates by their area of practice.' },
+        ],
         eyebrow: 'GET STARTED',
         title: 'Create your account',
         intro: 'Create an account to get started with LawAssist AI.',
@@ -510,6 +519,15 @@ const translations = {
         network: 'সার্ভারের সাথে যোগাযোগ করা যায়নি। আপনার সংযোগ দেখে আবার চেষ্টা করুন।',
       },
       register: {
+        line1: 'আপনার আইনি যাত্রা',
+        line2: 'শুরু হোক এখানে',
+        description:
+          'একটি অ্যাকাউন্ট তৈরি করে সহজ বাংলা ও ইংরেজিতে আইনি প্রশ্ন করুন, বাংলাদেশের আইনের ক্ষেত্রগুলো দেখুন এবং সঠিক আইনজীবী খুঁজে নিন।',
+        benefits: [
+          { title: 'সহজ বাংলা ও ইংরেজি', text: 'আইনের জটিল ভাষা ছাড়াই বাংলাদেশের আইনের স্পষ্ট ব্যাখ্যা।' },
+          { title: 'এআই আইনি সহকারীকে প্রশ্ন করুন', text: 'সহজ একটি চ্যাটে বাংলা বা ইংরেজিতে আপনার প্রশ্ন লিখুন।' },
+          { title: 'আইনজীবী খুঁজুন', text: 'অনুশীলনের ক্ষেত্র অনুযায়ী আইনজীবীদের দেখুন।' },
+        ],
         eyebrow: 'শুরু করুন',
         title: 'আপনার অ্যাকাউন্ট তৈরি করুন',
         intro: 'LawAssist AI দিয়ে শুরু করতে একটি অ্যাকাউন্ট তৈরি করুন।',
