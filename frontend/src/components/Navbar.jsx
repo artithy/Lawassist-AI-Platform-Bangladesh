@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import LanguageSwitch from './LanguageSwitch'
 import { useLanguage } from '../i18n/useLanguage'
@@ -7,23 +7,118 @@ import { useAuth } from '../auth/useAuth'
 // Each link has a path (URL) and the NAME of its text in translations.js.
 // The words themselves are not written here - they come from the dictionary.
 // "Explore Laws" goes to the "Areas of Law" section on the Home page ("/" + "#areas").
-// The Home page then scrolls down to that section by itself (see Home.jsx).
+// "section" is the id of that link's section on the Home page (used by the scroll highlight below);
+// the link itself always opens its own page (About -> /about).
 const navLinks = [
-  { path: '/', textKey: 'home' },
-  { path: '/', hash: '#areas', textKey: 'exploreLaws' },
-  { path: '/assistant', textKey: 'aiAssistant' },
-  { path: '/lawyers', textKey: 'findLawyer' },
-  { path: '/about', textKey: 'about' },
+  { key: 'home', path: '/', textKey: 'home', section: 'home' },
+  { key: 'exploreLaws', path: '/', hash: '#areas', textKey: 'exploreLaws', section: 'areas' },
+  { key: 'aiAssistant', path: '/assistant', textKey: 'aiAssistant', section: 'assistant' },
+  { key: 'findLawyer', path: '/lawyers', textKey: 'findLawyer', section: 'lawyers' },
+  { key: 'about', path: '/about', textKey: 'about', section: 'about' },
 ]
 
-// Is this link the current page? ("Home" and "Explore Laws" share the "/" page,
-// so we also look at the #areas part of the address to tell them apart.)
-function isLinkActive(link, location) {
-  if (link.path === '/') {
-    const onAreas = location.hash === '#areas'
-    return location.pathname === '/' && (link.hash ? onAreas : !onAreas)
+// The Home page sections the navbar follows while you scroll, in the order they appear on the page
+const homeSections = navLinks
+  .filter(function (link) {
+    return link.section
+  })
+  .map(function (link) {
+    return link.section
+  })
+
+// Which ONE navbar link is active?  (A single key, so two links can never be active together.)
+//   Home page ("/")  -> the section on screen (see useHomeSection below)
+//   other pages      -> the link of that page; the pages inside it count too (/laws, /lawyers/tanvir)
+//   login, register, unknown address -> none
+function getActiveKey(pathname, homeSection) {
+  if (pathname === '/') {
+    const link = navLinks.find(function (item) {
+      return item.section === homeSection
+    })
+    return link ? link.key : 'home'
   }
-  return location.pathname === link.path || location.pathname.startsWith(link.path + '/')
+  if (pathname === '/laws' || pathname.startsWith('/laws/')) return 'exploreLaws'
+  const link = navLinks.find(function (item) {
+    return item.path !== '/' && (pathname === item.path || pathname.startsWith(item.path + '/'))
+  })
+  return link ? link.key : null
+}
+
+// Scroll highlight for the Home page: which section is on screen right now?
+// An IntersectionObserver watches a thin band a third of the way down the window; the section
+// crossing that band is the current one. Between sections (and over the closing banner) the last one stays.
+function useHomeSection(location) {
+  const hashId = location.hash.slice(1)
+  const startId = homeSections.includes(hashId) ? hashId : 'home'
+
+  // Every new visit / click starts from the address (/#areas -> Explore Laws), then the scroll takes over.
+  const [state, setState] = useState({ key: location.key, section: startId })
+  let section = state.section
+  if (state.key !== location.key) {
+    setState({ key: location.key, section: startId })
+    section = startId
+  }
+
+  const onHome = location.pathname === '/'
+  const lockUntil = useRef(0)
+  const keyRef = useRef(location.key)
+  useEffect(
+    function () {
+      keyRef.current = location.key
+      // A click on a link scrolls smoothly past other sections. Ignore the scroll for a moment so the
+      // highlight does not flicker through them; the final position is applied when the scrolling is over.
+      lockUntil.current = location.hash ? Date.now() + 1000 : 0
+    },
+    [location.key, location.hash],
+  )
+
+  useEffect(
+    function () {
+      if (!onHome || typeof IntersectionObserver === 'undefined') return undefined
+      const inBand = new Set()
+      let timer = 0
+
+      function apply() {
+        // the last section (in page order) that touches the band
+        const current = homeSections.filter(function (id) {
+          return inBand.has(id)
+        })
+        if (current.length === 0) return
+        const id = current[current.length - 1]
+        setState(function (old) {
+          return old.section === id && old.key === keyRef.current ? old : { key: keyRef.current, section: id }
+        })
+      }
+
+      const observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) inBand.add(entry.target.id)
+            else inBand.delete(entry.target.id)
+          })
+          const wait = lockUntil.current - Date.now()
+          if (wait > 0) {
+            clearTimeout(timer)
+            timer = setTimeout(apply, wait + 50)
+          } else {
+            apply()
+          }
+        },
+        { rootMargin: '-34% 0px -64% 0px' },
+      )
+      homeSections.forEach(function (id) {
+        const element = document.getElementById(id)
+        if (element) observer.observe(element)
+      })
+      return function () {
+        clearTimeout(timer)
+        observer.disconnect()
+      }
+    },
+    [onHome],
+  )
+
+  return section
 }
 
 // The current page gets an ivory text colour and a small gold line underneath.
@@ -47,6 +142,8 @@ function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const homeSection = useHomeSection(location)
+  const activeKey = getActiveKey(location.pathname, homeSection)
 
   // The AI Legal Assistant page has its own dark look (charcoal/black with gold). Every other page keeps the normal bar.
   const dark = location.pathname === '/assistant'
@@ -76,7 +173,7 @@ function Navbar() {
   async function handleLogout() {
     closeMenu()
     await signOut()
-    navigate('/login', { replace: true })
+    navigate('/login', { replace: true, state: null })
   }
 
   // Mobile: a dropdown panel under the bar.  Desktop (lg:): a normal row.
@@ -134,13 +231,13 @@ function Navbar() {
         <div className={menuClass}>
           <ul className={'flex flex-col lg:flex-1 lg:flex-row lg:justify-center lg:gap-4 xl:gap-9 ' + (dark ? '2xl:gap-[44px]' : '')}>
             {navLinks.map(function (link) {
-              const isActive = isLinkActive(link, location)
+              const isActive = link.key === activeKey
               return (
-                <li key={link.path + (link.hash || '')}>
+                <li key={link.key}>
                   <Link
                     to={link.path + (link.hash || '')}
                     className={getNavLinkClass(isActive, dark)}
-                    aria-current={isActive ? 'page' : undefined}
+                    aria-current={isActive ? (location.pathname === '/' ? 'location' : 'page') : undefined}
                     onClick={closeMenu}
                   >
                     {t.nav[link.textKey]}

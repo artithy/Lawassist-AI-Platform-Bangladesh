@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Shared by the home-page lawyer section and the /lawyers directory page.
+// Shared by the lawyer directory (the /lawyers page AND the Home section use the same component) and the profile page.
 // ---------- Small gold line icons (plain SVG) ----------
 export function Icon({ children, size = 18, className = '' }) {
   return (
@@ -170,3 +170,23 @@ export function FilterChip({ icon, label, anyLabel, options, value, onChange, bi
   )
 }
 
+// ---------- Words about one profile, in the current language ----------
+// "h" is t.lawyers (names, filter options) from translations.js
+export function textOf(h, profile) {
+  return h.profiles.find(function (item) {
+    return item.id === profile.id
+  })
+}
+export function formatsOf(h, profile) {
+  return profile.formats.map(function (value) { return h.filters.availability.options[value] }).join(', ')
+}
+export function languagesOf(h, profile) {
+  return profile.languages.map(function (value) { return h.filters.language.options[value] }).join(', ')
+}
+
+// The small "Sample profile" label shown next to every demo advocate
+export function DemoBadge({ label, isBn }) {
+  return (
+    <span className={'inline-flex items-center rounded-full border border-gold/50 bg-gold/10 px-2.5 py-0.5 font-medium text-gold-light ' + (isBn ? 'text-[13px]' : 'text-[11px]')}>{label}</span>
+  )
+}

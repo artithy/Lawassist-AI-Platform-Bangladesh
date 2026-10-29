@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { useAuth } from '../auth/useAuth'
 import { Field, GoogleButton, Icon, Notice, OrDivider, PasswordField, SubmitButton } from '../components/AuthUi'
 import { checkAnyPassword, checkEmail } from '../services/authValidation'
+import { clearReturnTo, fromState, saveReturnTo } from '../auth/returnTo'
 import courthouse from '../assets/areas-courthouse.webp'
 
 // The log-in page: /login
@@ -20,6 +21,8 @@ function Login() {
   const isBn = language === 'bn'
   const location = useLocation()
   const { session, signIn, signInWithGoogle } = useAuth()
+  // The page the visitor wanted before being sent here (set by ProtectedRoute), e.g. a lawyer profile
+  const wantedPage = fromState(location.state)
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [remember, setRemember] = useState(false)
@@ -45,6 +48,11 @@ function Login() {
     })
   }
 
+  // Arriving here again means any older "continue after Google" request is finished or abandoned
+  useEffect(function () {
+    clearReturnTo()
+  }, [])
+
   // When a status message appears, move the focus to it (so screen readers read it, and it scrolls into view)
   useEffect(
     function () {
@@ -53,11 +61,13 @@ function Login() {
     [status],
   )
 
-  // Already signed in (or just signed in): go to the AI Legal Chat.
-  // A question typed on the home page (kept by ProtectedRoute) is passed on, so it is not lost.
+  // Already signed in (or just signed in): go back to the page the visitor wanted (a lawyer profile, for example),
+  // or to the AI Legal Chat when they came to log in on purpose.
+  // A question typed on the home page (kept by ProtectedRoute) is passed on to the chat, so it is not lost.
   if (session) {
     const question = location.state && location.state.question
-    return <Navigate to="/assistant" replace state={question ? { question: question } : null} />
+    const goesToChat = !wantedPage || wantedPage === '/assistant'
+    return <Navigate to={wantedPage || '/assistant'} replace state={goesToChat && question ? { question: question } : null} />
   }
 
   async function handleSubmit(event) {
@@ -86,9 +96,12 @@ function Login() {
     setStatus('')
     setServerError('')
     setBusy(true)
+    // Google takes the browser away from this site, so the wanted page is kept for the way back (see auth/returnTo.js)
+    saveReturnTo(wantedPage)
     const result = await signInWithGoogle({ remember: remember })
     // on success the browser is already on its way to Google; only an error comes back here
     if (result.errorKey) {
+      clearReturnTo()
       setServerError(result.errorKey)
       setBusy(false)
     }
@@ -177,6 +190,9 @@ function Login() {
                   <Notice>{l.forgotInfo}</Notice>
                 </div>
               )}
+              {wantedPage.startsWith('/lawyers/') && !serverError && !status && (
+                <Notice>{l.profileGate}</Notice>
+              )}
               {serverError && (
                 <Notice tone="error" role="alert">
                   {a.errors[serverError]}
@@ -208,7 +224,7 @@ function Login() {
 
             <p className={'mt-7 text-center text-mist ' + (isBn ? 'text-[16px]' : 'text-[14px]')}>
               {l.noAccount}{' '}
-              <Link to="/register" className="font-medium text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold">
+              <Link to="/register" state={location.state} className="font-medium text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold">
                 {l.registerLink}
               </Link>
             </p>

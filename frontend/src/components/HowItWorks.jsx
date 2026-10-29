@@ -1,4 +1,5 @@
 import { useLanguage } from '../i18n/useLanguage'
+import SectionHeading from './SectionHeading'
 
 // One small gold line icon per step (plain SVG, same approach as the other sections).
 const icons = [
@@ -32,45 +33,33 @@ function Diamond({ className }) {
 }
 
 // ---------- The "How it works" section ----------
+// Used on the Home page (inside AboutSection, joined) and on the About page.
 // A centred heading, then three cards that are joined by a thin gold line,
 // so they read as one journey: ask -> read -> check the source.
 //   Desktop (lg:): three cards in a row, joined by a horizontal line.
 //   Phone/tablet : the cards are stacked, joined by a short vertical line.
-function HowItWorks() {
+function HowItWorks({ joined = false }) {
   const { language, t } = useLanguage()
   const h = t.howItWorks
   const isBn = language === 'bn'
 
-  // Bangla needs more line height and no letter spacing
-  const headingSize = isBn
-    ? 'text-[clamp(1.5rem,3vw,2.9rem)] leading-[1.4]'
-    : 'text-[clamp(1.7rem,3.5vw,3.6rem)] leading-[1.12]'
-
   return (
-    <section
-      id="how-it-works"
-      className="relative scroll-mt-16 overflow-hidden border-t border-silver/10 bg-linear-to-b from-[#0e1115] via-[#14171c] to-[#12151a]"
-    >
-      {/* A very soft warm light behind the heading, for depth */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_50%_0%,rgba(185,154,91,0.08),transparent_65%)]" />
-
-      <div className="relative mx-auto max-w-[1320px] px-5 py-20 sm:px-8 lg:py-28 2xl:max-w-[1500px]">
-        {/* ----- Heading ----- */}
-        <div className="text-center">
-          <p className={'font-semibold text-gold ' + (isBn ? 'text-[16px]' : 'text-[12px] tracking-[0.3em] sm:text-[13px]')}>{h.eyebrow}</p>
-
-          <h2 className={'mx-auto mt-5 font-display font-medium text-ivory ' + headingSize}>
-            <span className="block">{h.line1}</span>
-            <span className="block">{h.line2}</span>
-          </h2>
-
-          {/* Small gold ornament: line - diamond - line */}
-          <div aria-hidden="true" className="mt-7 flex items-center justify-center gap-3">
-            <span className="h-px w-12 bg-linear-to-r from-transparent to-gold/70" />
-            <Diamond className="size-1.5" />
-            <span className="h-px w-12 bg-linear-to-l from-transparent to-gold/70" />
-          </div>
-        </div>
+    // The section has NO background of its own: it takes the colour of whatever it sits in, so it reads as part of
+    // the same page. "joined" = continues straight on from the About introduction on the Home page (no line, less
+    // space above); otherwise (the About page) it gets the same thin top line as the other About sections.
+    <section id="how-it-works" aria-labelledby="how-it-works-heading" className={'relative scroll-mt-16 ' + (joined ? '' : 'border-t border-silver/10')}>
+      <div className={'relative mx-auto max-w-[1320px] px-5 sm:px-8 2xl:max-w-[1500px] ' + (joined ? 'pb-20 pt-4 lg:pb-28 lg:pt-6' : 'py-16 lg:py-20')}>
+        {/* ----- Heading (the shared section heading) ----- */}
+        <SectionHeading
+          label={h.eyebrow}
+          id="how-it-works-heading"
+          title={
+            <>
+              <span className="block">{h.line1}</span>
+              <span className="block">{h.line2}</span>
+            </>
+          }
+        />
 
         {/* ----- Three steps ----- */}
         <ol className="mx-auto mt-14 grid max-w-[560px] grid-cols-1 gap-12 lg:mt-20 lg:max-w-none lg:grid-cols-3 lg:gap-14 2xl:gap-20">

@@ -4,3 +4,7 @@
 .DS_Store
 _backup_before_dark_assistant/
 _backup_before_src_cleanup/
+
+# Local backup folders
+_backup_before_headings/
+_backup_before_nav_audit/

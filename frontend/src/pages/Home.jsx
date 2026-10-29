@@ -1,13 +1,12 @@
-import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import HeroBackground from '../components/HeroBackground'
 import HeroArtwork from '../components/HeroArtwork'
 import LegalQuestionCard from '../components/LegalQuestionCard'
-import FeatureStrip from '../components/FeatureStrip'
+import AssistantSection from '../components/AssistantSection'
 import AreasOfLaw from '../components/AreasOfLaw'
-import HowItWorks from '../components/HowItWorks'
-import FindLawyerSection from '../components/FindLawyerSection'
+import LawyerDirectory from '../components/LawyerDirectory'
 import FinalCta from '../components/FinalCta'
+import AboutSection from '../components/AboutSection'
 import { useLanguage } from '../i18n/useLanguage'
 
 function ArrowIcon() {
@@ -49,27 +48,8 @@ function SearchIcon() {
 
 function Home() {
   const { language, t } = useLanguage()
-  const location = useLocation()
 
-  // The "Explore Laws" link (navbar) and the "Explore Bangladesh Laws" button (hero) both go to "/#areas".
-  // Every time someone clicks one of them, "location.key" changes, so this runs again:
-  //   - address ends with #areas -> scroll smoothly to the Areas of Law section
-  //   - otherwise (e.g. the Home link) -> start at the top of the page
-  // It also works when we arrive from another page, because this runs after Home has been drawn.
-  useEffect(
-    function () {
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      const behavior = reduceMotion ? 'auto' : 'smooth'
-      if (location.hash === '#areas') {
-        const section = document.getElementById('areas')
-        if (section) section.scrollIntoView({ behavior, block: 'start' })
-      } else {
-        window.scrollTo({ top: 0, behavior: 'auto' })
-      }
-    },
-    [location.key, location.hash],
-  )
-
+  // (Links like "/#areas" are scrolled to by components/ScrollToTop.jsx, and the navbar highlights the section in view.)
   // Bangla letters have marks above and below the line, so they need more line height
   // than English, otherwise the marks get cut off.
   let headlineSize = 'text-[clamp(2.4rem,3.9vw,4.4rem)] leading-[1.03]'
@@ -81,7 +61,7 @@ function Home() {
     // "-mt-16" slides the hero up underneath the see-through navbar (the navbar is 4rem tall),
     // so the court picture starts at the very top of the page, like the design.
     <>
-      <main className="relative -mt-16 min-h-[720px] overflow-hidden lg:min-h-screen">
+      <main id="home" className="relative -mt-16 min-h-[720px] overflow-hidden lg:min-h-screen">
         <HeroBackground />
 
         {/* Text column. On desktop it only uses the left part, the statue has the right part. */}
@@ -137,20 +117,20 @@ function Home() {
         <HeroArtwork />
       </main>
 
-      {/* Four short promises under the hero */}
-      <FeatureStrip />
-
-      {/* The five areas of law */}
+      {/* 2. Explore Laws: the five areas of law */}
       <AreasOfLaw />
 
-      {/* The three steps */}
-      <HowItWorks />
+      {/* 3. AI Legal Assistant: what it does, and the four promises */}
+      <AssistantSection />
 
-      {/* Find a Lawyer: intro, working filters and three demo profiles */}
-      <FindLawyerSection />
+      {/* 4. Find a Lawyer: the SAME directory component as the /lawyers page */}
+      <LawyerDirectory embedded />
 
-      {/* Closing banner */}
+      {/* 5. Closing banner */}
       <FinalCta />
+
+      {/* 6. About: short introduction + "How it works"; "Learn More" opens the /about page. The footer follows. */}
+      <AboutSection />
     </>
   )
 }

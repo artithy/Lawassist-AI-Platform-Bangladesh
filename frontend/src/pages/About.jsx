@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../i18n/useLanguage'
+import HowItWorks from '../components/HowItWorks'
+import SectionHeading from '../components/SectionHeading'
 
 // Small icons (plain SVG)
 function Icon({ children, size = 22, className = '' }) {
@@ -10,15 +12,7 @@ function Icon({ children, size = 22, className = '' }) {
   )
 }
 
-// One icon for each "How it helps" step, and for each key feature
-const howIcons = [
-  <path key="a" d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16ZM4 18.5A2.5 2.5 0 0 1 6.5 16H20" />,
-  <path key="b" d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z" />,
-  <>
-    <circle key="c1" cx="11" cy="11" r="7" />
-    <path key="c2" d="m20 20-3.5-3.5" />
-  </>,
-]
+// One icon for each key feature
 const featureIcons = [
   <>
     <path key="a1" d="m5 8 6 6" />
@@ -40,16 +34,6 @@ const featureIcons = [
   </>,
 ]
 
-// A small heading with a gold line before it
-function Eyebrow({ children, isBn }) {
-  return (
-    <div className={'flex items-center gap-4 font-medium text-gold ' + (isBn ? 'text-[15px]' : 'text-[12px] tracking-[0.3em] sm:text-[13px]')}>
-      <span className="h-px w-8 bg-gold/70 sm:w-[70px]" />
-      <span>{children}</span>
-    </div>
-  )
-}
-
 // The /about page
 function About() {
   const { language, t } = useLanguage()
@@ -57,60 +41,42 @@ function About() {
   const isBn = language === 'bn'
 
   const bodyText = isBn ? 'text-[17px] leading-[1.9]' : 'text-[16px] leading-[1.75]'
-  const cardTitle = 'font-display font-medium text-ivory ' + (isBn ? 'text-[22px] leading-[1.45]' : 'text-[24px] leading-[1.15]')
-  const cardText = 'mt-2 text-mist ' + (isBn ? 'text-[16px] leading-[1.8]' : 'text-[14.5px] leading-[1.65]')
-  const sectionTitle = 'font-display font-medium text-ivory ' + (isBn ? 'text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.45]' : 'text-[clamp(1.8rem,2.8vw,2.5rem)] leading-[1.1]')
 
   return (
     <main className="bg-[#0e1115]">
       {/* ================= Introduction ================= */}
       <section className="relative overflow-hidden bg-[radial-gradient(ellipse_at_20%_0%,rgba(185,154,91,0.1),transparent_60%)]">
         <div className="mx-auto max-w-[1100px] px-5 pb-14 pt-12 sm:px-8 sm:pt-16">
-          <Eyebrow isBn={isBn}>{a.eyebrow}</Eyebrow>
-          <h1 className={'mt-5 font-display font-medium ' + (isBn ? 'text-[clamp(2rem,5vw,3.6rem)] leading-[1.35]' : 'text-[clamp(2.4rem,5.4vw,4.4rem)] leading-[1.05]')}>
-            <span className="block text-ivory">{a.line1}</span>
-            <span className="block text-gold-light">{a.line2}</span>
-          </h1>
-          <p className={'mt-6 max-w-[44rem] text-silver ' + (isBn ? 'text-[18px] leading-[1.9]' : 'text-[17px] leading-[1.75] sm:text-[19px]')}>{a.lead}</p>
+          <SectionHeading
+            as="h1"
+            label={a.eyebrow}
+            title={
+              <>
+                <span className="block">{a.line1}</span>
+                <span className="block text-gold-light">{a.line2}</span>
+              </>
+            }
+            subtitle={a.lead}
+          />
         </div>
       </section>
 
       {/* ================= Why it exists ================= */}
       <section className="border-t border-silver/10">
-        <div className="mx-auto grid max-w-[1100px] gap-6 px-5 py-14 sm:px-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-12">
-          <h2 className={sectionTitle}>{a.missionTitle}</h2>
-          <p className={'text-silver ' + bodyText}>{a.missionText}</p>
+        <div className="mx-auto max-w-[1100px] px-5 py-16 sm:px-8">
+          <SectionHeading title={a.missionTitle} />
+          <p className={'mx-auto mt-7 max-w-[48rem] text-center text-silver ' + bodyText}>{a.missionText}</p>
         </div>
       </section>
 
-      {/* ================= How it helps ================= */}
-      <section className="border-t border-silver/10 bg-[#0b0e12]">
-        <div className="mx-auto max-w-[1100px] px-5 py-14 sm:px-8">
-          <h2 className={sectionTitle}>{a.howTitle}</h2>
-          <ol className="mt-8 grid gap-4 md:grid-cols-3">
-            {a.how.map(function (item, index) {
-              return (
-                <li key={item.title} className="rounded-[20px] border border-silver/15 bg-[#12151a]/90 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="flex size-11 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold-light">
-                      <Icon>{howIcons[index]}</Icon>
-                    </span>
-                    <span aria-hidden="true" className="font-display text-[28px] text-gold/50">0{index + 1}</span>
-                  </div>
-                  <h3 className={'mt-5 ' + cardTitle}>{item.title}</h3>
-                  <p className={cardText}>{item.text}</p>
-                </li>
-              )
-            })}
-          </ol>
-        </div>
-      </section>
+      {/* ================= How it works (moved here from the Home page; id="how-it-works") ================= */}
+      <HowItWorks />
 
       {/* ================= Audience and key features ================= */}
       <section className="border-t border-silver/10">
         <div className="mx-auto grid max-w-[1100px] gap-12 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:gap-14">
           <div>
-            <h2 className={sectionTitle}>{a.audienceTitle}</h2>
+            <SectionHeading align="start" title={a.audienceTitle} />
             <ul className="mt-7 space-y-5">
               {a.audience.map(function (item) {
                 return (
@@ -127,7 +93,7 @@ function About() {
           </div>
 
           <div>
-            <h2 className={sectionTitle}>{a.featuresTitle}</h2>
+            <SectionHeading align="start" title={a.featuresTitle} />
             <ul className="mt-7 grid gap-3 sm:grid-cols-2">
               {a.features.map(function (item, index) {
                 return (
@@ -147,8 +113,8 @@ function About() {
       <section className="border-t border-silver/10 bg-[#0b0e12]">
         <div className="mx-auto max-w-[1100px] px-5 py-14 sm:px-8">
           <div className="rounded-[22px] border border-gold/35 bg-gold/[0.06] p-6 sm:p-8">
-            <h2 className={sectionTitle}>{a.honestTitle}</h2>
-            <p className={'mt-3 max-w-[52rem] text-silver ' + bodyText}>{a.honestText}</p>
+            <SectionHeading title={a.honestTitle} />
+            <p className={'mx-auto mt-5 max-w-[52rem] text-center text-silver ' + bodyText}>{a.honestText}</p>
 
             <h3 className={'mt-8 font-medium text-gold ' + (isBn ? 'text-[16px]' : 'text-[12px] tracking-[0.22em]')}>{a.statusTitle}</h3>
             <div className="mt-4 grid gap-6 sm:grid-cols-2">
@@ -180,8 +146,7 @@ function About() {
       {/* ================= Call to action ================= */}
       <section className="border-t border-silver/10 bg-[radial-gradient(ellipse_at_50%_100%,rgba(185,154,91,0.09),transparent_65%)]">
         <div className="mx-auto max-w-[1100px] px-5 py-14 text-center sm:px-8">
-          <h2 className={sectionTitle}>{a.ctaTitle}</h2>
-          <p className={'mx-auto mt-3 max-w-xl text-silver ' + (isBn ? 'text-[17px] leading-[1.85]' : 'text-[16px] leading-[1.7]')}>{a.ctaText}</p>
+          <SectionHeading title={a.ctaTitle} subtitle={a.ctaText} />
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link to="/#areas" className={'inline-flex items-center rounded-xl bg-gold px-7 py-3.5 font-semibold text-deep shadow-lg shadow-gold/20 transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light ' + (isBn ? 'text-[17px]' : 'text-[15px]')}>
               {t.nav.exploreLaws}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../i18n/useLanguage'
+import SectionHeading from './SectionHeading'
 import courthouse from '../assets/areas-courthouse.webp'
 
 // ---------- Small gold line icons (plain SVG, one per card, same order as t.areas.cards) ----------
@@ -99,16 +100,9 @@ function AreasOfLaw() {
   const a = t.areas
   const isBn = language === 'bn'
 
-  // Bangla needs a smaller size and more line height than the English serif heading
-  const headingSize = isBn
-    ? 'text-[clamp(1.9rem,3vw,3.1rem)] leading-[1.35]'
-    : 'text-[clamp(2.3rem,3.4vw,4.2rem)] leading-[1.06]'
-  // Wide letter spacing looks nice in English capitals, but breaks Bangla letters apart
-  const spaced = isBn ? 'text-[15px]' : 'tracking-[0.32em]'
-
   return (
     // "scroll-mt-16" keeps the heading just below the sticky navbar when the page scrolls here
-    <section id="areas" className="relative scroll-mt-16 overflow-hidden bg-[#0e1115]">
+    <section id="areas" aria-labelledby="areas-heading" className="relative scroll-mt-16 overflow-hidden bg-[#0e1115]">
       {/* Background: courthouse columns, a pointed arch with the outline of Bangladesh */}
       <img
         src={courthouse}
@@ -123,24 +117,23 @@ function AreasOfLaw() {
       {/* Keeps the text readable where it sits on top of the picture */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#0e1115]/80 via-transparent to-transparent lg:via-[#0e1115]/10" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-[#0e1115] to-transparent" />
+      {/* A soft dark patch behind the centred heading, so it stays easy to read where the picture is */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[26rem] bg-[radial-gradient(ellipse_48%_70%_at_50%_38%,rgba(14,17,21,0.82),transparent_100%)]" />
 
       <div className="relative mx-auto max-w-[1920px] px-5 pb-16 pt-14 sm:px-8 lg:px-[6%] lg:pb-20 lg:pt-[88px]">
-        {/* Small label with gold lines on both sides */}
-        <div className={'flex items-center gap-4 font-medium text-gold ' + (isBn ? '' : 'text-[12px] sm:text-[13px] ') + spaced}>
-          <span className="h-px w-6 bg-gold/70 sm:w-[26px]" />
-          <span>{a.eyebrow}</span>
-          <span className="hidden h-px w-[58px] bg-gold/70 sm:block" />
-        </div>
-
-        {/* Heading + short description */}
-        <div className="mt-6 lg:pl-[2.5%]">
-          <h2 className={'font-display font-medium text-ivory ' + headingSize}>
-            <span className="block">{a.headingLine1}</span>
-            <span className="italic text-gold-light">{a.headingHighlight}</span>
-            {a.headingEnd}
-          </h2>
-          <p className="mt-5 max-w-[44rem] text-[15px] leading-[1.7] text-silver sm:text-[17px] 2xl:text-[20px]">{a.description}</p>
-        </div>
+        {/* The section heading: glass label, title and description (same component on every page) */}
+        <SectionHeading
+          label={a.eyebrow}
+          id="areas-heading"
+          title={
+            <>
+              <span className="block">{a.headingLine1}</span>
+              <span className="italic text-gold-light">{a.headingHighlight}</span>
+              {a.headingEnd}
+            </>
+          }
+          subtitle={a.description}
+        />
 
         {/* Right side words: Know / Understand / Take the right step (wide screens only) */}
         <div className="absolute right-[3.5%] top-[170px] hidden xl:block">

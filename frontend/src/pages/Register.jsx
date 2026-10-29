@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../i18n/useLanguage'
 import { useAuth } from '../auth/useAuth'
 import { Field, GoogleButton, Icon, Notice, OrDivider, PasswordField } from '../components/AuthUi'
+import { clearReturnTo, fromState, saveReturnTo } from '../auth/returnTo'
 import { checkConfirm, checkEmail, checkName, checkNewPassword } from '../services/authValidation'
 import courthouse from '../assets/areas-courthouse.webp'
 
@@ -15,6 +16,12 @@ function Register() {
   const r = a.register
   const isBn = language === 'bn'
   const navigate = useNavigate()
+  const location = useLocation()
+  // The page the visitor wanted before being sent to log in (e.g. a lawyer profile), kept through Log in <-> Sign up
+  const wantedPage = fromState(location.state)
+  useEffect(function () {
+    clearReturnTo()
+  }, [])
   const { session, signUp, signInWithGoogle } = useAuth()
 
   const [form, setForm] = useState(emptyForm)
@@ -98,15 +105,17 @@ function Register() {
   async function handleGoogle() {
     setServerError('')
     setBusy(true)
+    saveReturnTo(wantedPage)
     const result = await signInWithGoogle({ remember: true })
     if (result.errorKey) {
+      clearReturnTo()
       setServerError(result.errorKey)
       setBusy(false)
     }
   }
 
   // Signed in already (or signed up with e-mail confirmation switched off): go to the AI Legal Chat
-  if (session) return <Navigate to="/assistant" replace />
+  if (session) return <Navigate to={wantedPage || '/assistant'} replace />
 
   // The three benefits on the left: a small gold icon for each (same order as r.benefits in translations.js)
   const benefitIcons = [
@@ -205,7 +214,7 @@ function Register() {
                   {r.verifyText.split('{email}')[1]}
                 </p>
                 <p className={'mt-2 text-mist ' + (isBn ? 'text-[15.5px] leading-[1.8]' : 'text-[14px]')}>{r.verifyHint}</p>
-                <button type="button" onClick={function () { navigate('/login') }} className={'mt-7 inline-flex h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-gold px-6 font-semibold text-deep transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light ' + (isBn ? 'text-[16px]' : 'text-[15px]')}>
+                <button type="button" onClick={function () { navigate('/login', { state: location.state }) }} className={'mt-7 inline-flex h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-gold px-6 font-semibold text-deep transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light ' + (isBn ? 'text-[16px]' : 'text-[15px]')}>
                   {r.verifyButton}
                   <Icon size={16}>
                     <path d="M5 12h14" />
@@ -297,7 +306,7 @@ function Register() {
 
                 <p className={'mt-6 text-center text-mist ' + (isBn ? 'text-[16px]' : 'text-[14px]')}>
                   {r.haveAccount}{' '}
-                  <Link to="/login" className="font-medium text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold">
+                  <Link to="/login" state={location.state} className="font-medium text-gold-light underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-gold">
                     {r.loginLink}
                   </Link>
                 </p>

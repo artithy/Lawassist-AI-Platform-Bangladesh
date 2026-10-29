@@ -126,6 +126,36 @@ const translations = {
     },
 
     // The closing banner at the bottom of the home page
+    // The "AI Legal Assistant" section of the Home page (the four promises are t.features)
+    assistantSection: {
+      eyebrow: 'AI LEGAL ASSISTANT',
+      headingStart: 'Your questions, in ',
+      headingHighlight: 'plain language',
+      headingEnd: '',
+      text: 'A chat for your legal questions in Bangla or English. It explains in simple words and is designed to point to the law behind each answer.',
+    },
+
+    // The "About" section at the bottom of the Home page (its heading words are t.about.eyebrow / line1 / line2)
+    aboutSection: {
+      text: 'LawAssist AI is a Bangladeshi legal-information platform that explains the law in plain Bangla and English, and is designed to show where each explanation comes from.',
+      learnMore: 'Learn More',
+    },
+
+    // The /laws page (a placeholder until the law browser is built)
+    exploreLawsPage: {
+      eyebrow: 'EXPLORE LAWS',
+      title: 'Bangladesh laws, in one place',
+      text: 'Here you will be able to browse and search the laws of Bangladesh. This part is coming soon.',
+      home: 'Back to Home',
+    },
+
+    // The page shown for an address that does not exist
+    notFound: {
+      title: 'Page not found',
+      text: 'Sorry, this page does not exist or may have moved.',
+      home: 'Back to Home',
+    },
+
     finalCta: {
       headingStart: 'Understand your rights ',
       headingHighlight: 'before', // shown in gold italic
@@ -228,6 +258,7 @@ const translations = {
         google: 'Continue with Google',
         noAccount: 'New to LawAssist AI?',
         registerLink: 'Create an account',
+        profileGate: 'Please sign in to view the full lawyer profile. You will come straight back to it.',
       },
     },
 
@@ -464,6 +495,36 @@ const translations = {
       ],
     },
 
+    // হোম পেজের "এআই আইনি সহকারী" অংশ (চারটি প্রতিশ্রুতি আছে t.features-এ)
+    assistantSection: {
+      eyebrow: 'এআই আইনি সহকারী',
+      headingStart: 'আপনার প্রশ্ন, ',
+      headingHighlight: 'সহজ ভাষায়',
+      headingEnd: ' উত্তর',
+      text: 'বাংলা বা ইংরেজিতে আপনার আইনি প্রশ্ন করার একটি চ্যাট। এটি সহজ কথায় ব্যাখ্যা করে এবং প্রতিটি উত্তরের পেছনের আইনটি দেখানোর লক্ষ্যে তৈরি হচ্ছে।',
+    },
+
+    // হোম পেজের নিচের "আমাদের সম্পর্কে" অংশ (শিরোনামের কথাগুলো t.about.eyebrow / line1 / line2 থেকে আসে)
+    aboutSection: {
+      text: 'LawAssist AI একটি বাংলাদেশি আইনি তথ্যের প্ল্যাটফর্ম, যা সহজ বাংলা ও ইংরেজিতে আইন ব্যাখ্যা করে এবং প্রতিটি ব্যাখ্যা কোথা থেকে এসেছে তা দেখানোর লক্ষ্যে তৈরি হচ্ছে।',
+      learnMore: 'আরও জানুন',
+    },
+
+    // /laws পেজ (আইন ব্রাউজার তৈরি না হওয়া পর্যন্ত একটি অস্থায়ী পেজ)
+    exploreLawsPage: {
+      eyebrow: 'আইন অনুসন্ধান',
+      title: 'বাংলাদেশের আইন, এক জায়গায়',
+      text: 'এখানে আপনি বাংলাদেশের আইন ব্রাউজ ও খুঁজতে পারবেন। এই অংশটি শীঘ্রই আসছে।',
+      home: 'হোমে ফিরে যান',
+    },
+
+    // যে ঠিকানা নেই, সেখানে গেলে এই পেজ দেখা যায়
+    notFound: {
+      title: 'পেজটি পাওয়া যায়নি',
+      text: 'দুঃখিত, এই পেজটি নেই অথবা সরানো হয়েছে।',
+      home: 'হোমে ফিরে যান',
+    },
+
     finalCta: {
       headingStart: 'কাজ করার ',
       headingHighlight: 'আগেই',
@@ -565,6 +626,7 @@ const translations = {
         google: 'গুগল দিয়ে চালিয়ে যান',
         noAccount: 'LawAssist AI-তে নতুন?',
         registerLink: 'অ্যাকাউন্ট তৈরি করুন',
+        profileGate: 'পূর্ণ আইনজীবী প্রোফাইল দেখতে সাইন ইন করুন। সাইন ইনের পর সরাসরি সেখানেই ফিরে যাবেন।',
       },
     },
 

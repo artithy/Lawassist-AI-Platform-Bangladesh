@@ -6,11 +6,14 @@ import Home from './pages/Home'
 import ExploreLaws from './pages/ExploreLaws'
 import AiAssistant from './pages/AiAssistant'
 import FindLawyer from './pages/FindLawyer'
+import LawyerProfile from './pages/LawyerProfile'
 import About from './pages/About'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import PostLoginRedirect from './components/PostLoginRedirect'
+import NotFound from './components/NotFound'
 
 function App() {
   // The chat page (/assistant) is a full-screen app: no footer, and the page itself never scrolls
@@ -22,6 +25,7 @@ function App() {
       {/* The Navbar is outside <Routes>, so it shows on every page */}
       <Navbar />
       <ScrollToTop />
+      <PostLoginRedirect />
 
       {/* <Routes> shows ONE page at a time, depending on the URL.
           The wrapper's minimum height keeps the footer down at the bottom on short pages. */}
@@ -38,7 +42,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* The list of lawyers is public; a full profile needs a signed-in user (the visitor is sent to /login and brought back) */}
           <Route path="/lawyers" element={<FindLawyer />} />
+          <Route
+            path="/lawyers/:advocateId"
+            element={
+              <ProtectedRoute>
+                <LawyerProfile />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -46,15 +59,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* "*" matches any URL that is not listed above */}
-          <Route
-            path="*"
-            element={
-              <main className="mx-auto max-w-3xl px-6 py-20 text-center">
-                <h1 className="mb-4 font-serif text-4xl font-medium text-ivory">Page not found</h1>
-                <p className="mb-3 text-lg text-mist">Sorry, this page does not exist.</p>
-              </main>
-            }
-          />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
 
