@@ -8,3 +8,14 @@ _backup_before_src_cleanup/
 # Local backup folders
 _backup_before_headings/
 _backup_before_nav_audit/
+
+# Backend local backup folders
+/backend/_backup_before_m1/
+/backend/_backup_before_part_a/
+/backend/_backup_before_m41/
+
+# Backend local generated files
+/backend/.phpunit.result.cache
+/backend/database/database.sqlite
+/backend/bootstrap/cache/*.php
+/backend/storage/logs/*.log
