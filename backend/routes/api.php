@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\MeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -9,3 +10,6 @@ Route::get('/health', function () {
         'status' => 'healthy'
     ]);
 });
+
+// The signed-in user (verified Supabase token). 401 without a valid token.
+Route::middleware('auth:supabase')->get('/me', MeController::class);

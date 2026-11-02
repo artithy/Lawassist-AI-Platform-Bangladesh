@@ -12,6 +12,8 @@ use App\Enums\UserRole;
  *  - $role      : from app_metadata.role only (defaults to User). user_metadata and the top-level "role" claim
  *                 ("authenticated") are never used for authorization.
  *  - $email     : the token's email (lower-cased) or null. Display/contact copy only, never an identity key.
+ *  - $hasUnsupportedRole: app_metadata.role was set explicitly to something that is not user/lawyer/admin. $role is then
+ *                 still User (the approved default), so a consumer MUST check this flag and refuse; the Supabase guard does.
  *  - $displayName: from user_metadata, which the user can edit themselves: text for display only, never for
  *                 authorization decisions.
  */
@@ -25,6 +27,7 @@ final readonly class VerifiedToken
         public int $expiresAt,
         public string $algorithm,
         public ?string $keyId,
+        public bool $hasUnsupportedRole = false,
     ) {}
 
     /**
@@ -40,6 +43,7 @@ final readonly class VerifiedToken
             expiresAt: (int) $claims['exp'],
             algorithm: $algorithm,
             keyId: $keyId,
+            hasUnsupportedRole: UserRole::hasUnsupportedRole($claims['app_metadata'] ?? null),
         );
     }
 

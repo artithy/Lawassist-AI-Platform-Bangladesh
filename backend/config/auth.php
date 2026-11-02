@@ -42,6 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // API requests: a Supabase access token in "Authorization: Bearer ...". See App\Auth\Supabase.
+        'supabase' => [
+            'driver' => 'supabase',
+            'provider' => 'users',
+        ],
     ],
 
     /*

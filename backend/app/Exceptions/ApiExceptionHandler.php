@@ -6,6 +6,7 @@ use App\Auth\Supabase\AccountNotProvisionable;
 use App\Auth\Supabase\AuthServiceUnavailable;
 use App\Auth\Supabase\EmailConflict;
 use App\Auth\Supabase\InvalidSupabaseToken;
+use App\Auth\Supabase\UnsupportedRole;
 use App\Support\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -31,6 +32,7 @@ use Throwable;
  *   AuthServiceUnavailable   503  + Retry-After: 5
  *   EmailConflict            409
  *   AccountNotProvisionable  403
+ *   UnsupportedRole          403
  *
  * Each of these is logged exactly once, as one structured line carrying only the reason code, and Laravel's default
  * reporting of them is switched off (it would add a second entry with the exception message and its previous chain).
@@ -53,7 +55,7 @@ final class ApiExceptionHandler
 
         // One structured log line per authentication failure, then stop: no second, default log entry.
         $exceptions->report(function (
-            InvalidSupabaseToken|AuthServiceUnavailable|EmailConflict|AccountNotProvisionable $e,
+            InvalidSupabaseToken|AuthServiceUnavailable|EmailConflict|AccountNotProvisionable|UnsupportedRole $e,
         ): void {
             self::logAuthFailure($e);
         })->stop();
@@ -104,6 +106,10 @@ final class ApiExceptionHandler
             return ApiResponse::error('Your account cannot be set up because it has no usable email address.', 403);
         }
 
+        if ($e instanceof UnsupportedRole) {
+            return ApiResponse::error('This account is not allowed to use this application.', 403);
+        }
+
         if ($e instanceof AuthenticationException) {
             return ApiResponse::error('Unauthenticated.', 401, null, ['WWW-Authenticate' => self::CHALLENGE]);
         }
@@ -127,7 +133,7 @@ final class ApiExceptionHandler
      * Logging is best effort: a broken log channel must not turn a 401/503 into a 500.
      */
     private static function logAuthFailure(
-        InvalidSupabaseToken|AuthServiceUnavailable|EmailConflict|AccountNotProvisionable $e,
+        InvalidSupabaseToken|AuthServiceUnavailable|EmailConflict|AccountNotProvisionable|UnsupportedRole $e,
     ): void {
         $context = ['reason' => $e->reason];
 
@@ -136,6 +142,7 @@ final class ApiExceptionHandler
                 $e instanceof AuthServiceUnavailable => Log::error('Supabase authentication is unavailable.', $context),
                 $e instanceof InvalidSupabaseToken => Log::warning('Supabase access token rejected.', $context),
                 $e instanceof EmailConflict => Log::warning('Supabase user provisioning refused: email already in use.', $context),
+                $e instanceof UnsupportedRole => Log::warning('Supabase access refused: unsupported role.', $context),
                 default => Log::warning('Supabase user provisioning refused: no usable email.', $context),
             };
         } catch (Throwable) {
